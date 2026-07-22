@@ -12,3 +12,4 @@
 - 尚未在 Railway 實際部署與執行 smoke test。
 - 尚未取得使用者 GLM／LINE secrets，因此未做第三方 live smoke test。
 - repository 尚未公開，Railway Template 尚未發布。
+- GitHub Actions run `29894476978` 未啟動 runner：GitHub 回報付款失敗或 spending limit 不足；非測試失敗。本機 `uv --system-certs run --python 3.12 --extra test pytest -q` 為 10 passed。
