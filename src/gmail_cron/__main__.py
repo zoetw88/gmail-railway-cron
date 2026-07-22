@@ -24,7 +24,7 @@ def main() -> None:
             service = build_service(account)
             result = organize_account(service, account, rules, lookback, dry_run, ai=ai)
             send_summary(service, account, result, dry_run)
-            summaries.append(format_result(result, dry_run))
+            summaries.append(format_result(result, dry_run, account_email=account.email))
             logging.info("result:\n%s", format_result(result, dry_run))
         except Exception:
             failures.append(account.name)

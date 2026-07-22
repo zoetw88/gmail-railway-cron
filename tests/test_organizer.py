@@ -1,6 +1,6 @@
 from gmail_cron.ai import AiSuggestion
 from gmail_cron.config import Account, AiSettings, Rule
-from gmail_cron.organizer import organize_account
+from gmail_cron.organizer import Result, format_result, organize_account
 
 
 class Call:
@@ -68,3 +68,10 @@ def test_ai_only_receives_unmatched_messages_and_does_not_archive():
 
     assert result.ai_suggestions[0].category == "Reading"
     assert service.user_api.message_api.single_modified == []
+
+
+def test_line_summary_can_include_email_without_changing_default_log_summary():
+    result = Result(account="A", matched={"Security": 2})
+
+    assert "a@example.com" in format_result(result, False, account_email="a@example.com")
+    assert "a@example.com" not in format_result(result, False)

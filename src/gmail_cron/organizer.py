@@ -133,9 +133,10 @@ def send_summary(service, account: Account, result: Result, dry_run: bool) -> No
     service.users().messages().send(userId="me", body={"raw": raw}).execute()
 
 
-def format_result(result: Result, dry_run: bool) -> str:
+def format_result(result: Result, dry_run: bool, account_email: str | None = None) -> str:
     mode = "DRY RUN" if dry_run else "LIVE"
-    lines = [f"📬 Gmail {result.account} — {mode}"]
+    account_label = f"{result.account} — {account_email}" if account_email else result.account
+    lines = [f"📬 Gmail {account_label} — {mode}"]
     lines.extend(f"{label}: {count}" for label, count in result.matched.items())
     lines.append(f"封存: {result.archived}")
     if result.ai_suggestions:
