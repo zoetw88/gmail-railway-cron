@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-import json
 import logging
 import os
 
-from .config import dry_run_enabled, load_accounts, load_rules
-from .organizer import build_service, organize_account, send_summary
+from .config import ai_settings, dry_run_enabled, line_settings, load_accounts, load_rules
+from .line import push_line
+from .organizer import build_service, format_result, organize_account, send_summary
 
 
 def main() -> None:
@@ -14,21 +14,26 @@ def main() -> None:
     rules = load_rules()
     dry_run = dry_run_enabled()
     lookback = os.environ.get("LOOKBACK", "1d")
+    ai = ai_settings()
+    line = line_settings()
     failures: list[str] = []
+    summaries: list[str] = []
 
     for account in accounts:
         try:
             service = build_service(account)
-            result = organize_account(service, account, rules, lookback, dry_run)
+            result = organize_account(service, account, rules, lookback, dry_run, ai=ai)
             send_summary(service, account, result, dry_run)
-            logging.info("result=%s", json.dumps(result.__dict__, ensure_ascii=False))
+            summaries.append(format_result(result, dry_run))
+            logging.info("result:\n%s", format_result(result, dry_run))
         except Exception:
             failures.append(account.name)
             logging.exception("account=%s failed", account.name)
     if failures:
         raise SystemExit(f"Failed accounts: {', '.join(failures)}")
+    if line:
+        push_line(line, "\n\n".join(summaries))
 
 
 if __name__ == "__main__":
     main()
-

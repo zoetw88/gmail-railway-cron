@@ -8,3 +8,10 @@
 - [x] 四個真實帳號完成 OAuth，並以 Gmail profile API 精確驗證帳號。
 - [x] 四個帳號完成只讀 Gmail API smoke test（profile、labels、recent Inbox query）。
 - [ ] Railway dry-run logs 與 Gmail 實際畫面驗證（需外部帳號）。
+- [x] GLM 僅接收 sender、subject、最長 500 字 snippet，並驗證結構化分類輸出。
+- [x] AI 預設關閉且只建議；即使啟用貼標籤也不會由 AI 封存。
+- [x] 可選 LINE Messaging API 摘要，未設定不影響 Gmail 整理。
+- [x] `railway.json` 宣告台灣每日 21:30 的 UTC cron 與不重啟政策。
+- [x] MIT 授權與公開部署、資料分享、停用／刪除說明完整。
+- [ ] GitHub Actions 測試通過。
+- [ ] repository 公開並發布 Railway Template（需使用者確認公開權限變更）。

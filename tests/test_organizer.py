@@ -1,4 +1,5 @@
-from gmail_cron.config import Account, Rule
+from gmail_cron.ai import AiSuggestion
+from gmail_cron.config import Account, AiSettings, Rule
 from gmail_cron.organizer import organize_account
 
 
@@ -12,9 +13,17 @@ class Labels:
 
 
 class Messages:
-    def __init__(self): self.modified = []
-    def list(self, **kwargs): return Call({"messages": [{"id": "m1"}]})
+    def __init__(self): self.modified = []; self.single_modified = []
+    def list(self, **kwargs):
+        if kwargs["q"] == "in:inbox newer_than:1d":
+            return Call({"messages": [{"id": "m1"}, {"id": "m2"}]})
+        return Call({"messages": [{"id": "m1"}]})
     def batchModify(self, **kwargs): self.modified.append(kwargs["body"]); return Call({})
+    def get(self, **kwargs):
+        return Call({"id": kwargs["id"], "snippet": "preview", "payload": {"headers": [
+            {"name": "From", "value": "sender@example.com"}, {"name": "Subject", "value": "subject"}
+        ]}})
+    def modify(self, **kwargs): self.single_modified.append(kwargs); return Call({})
 
 
 class Users:
@@ -44,3 +53,18 @@ def test_archive_removes_inbox():
     assert result.archived == 1
     assert service.user_api.message_api.modified[0]["removeLabelIds"] == ["INBOX"]
 
+
+def test_ai_only_receives_unmatched_messages_and_does_not_archive():
+    class Classifier:
+        def classify(self, previews):
+            assert [preview.message_id for preview in previews] == ["m2"]
+            return [AiSuggestion("m2", "Reading", 0.99, "一封電子報")]
+
+    service = Service()
+    ai = AiSettings("secret", "https://example.test", "glm", 0.9, 20, False)
+    result = organize_account(
+        service, ACCOUNT, [Rule("Security", "from:google.com")], "1d", False, ai=ai, classifier=Classifier()
+    )
+
+    assert result.ai_suggestions[0].category == "Reading"
+    assert service.user_api.message_api.single_modified == []

@@ -1,6 +1,6 @@
 # Gmail A/B/C/D 每日整理器
 
-每天由 Railway Cron 啟動，依序整理多個 Gmail 帳號、貼標籤、封存明確促銷信，寄出摘要後退出。規則採 first-match：同一封信只會套用第一個匹配規則。
+每天由 Railway Cron 啟動，依序整理多個 Gmail 帳號、貼標籤、封存明確促銷信，寄出摘要後退出。可選用 GLM 分類未匹配郵件，並把每日摘要推送到 LINE。規則採 first-match：同一封信只會套用第一個匹配規則。
 
 ## 安全預設
 
@@ -9,6 +9,20 @@
 - 不匹配的郵件留在 Inbox。
 - OAuth secret／refresh token 只放 Railway Variables。
 - 程式僅查詢 `in:inbox newer_than:1d`，避免第一次執行掃完整個信箱。
+- AI 預設關閉；開啟後也只提供建議，不會由 AI 封存郵件。
+- GLM 只接收寄件者、主旨與最多 500 字 Gmail snippet，不接收完整信件本文。
+
+## Railway 部署
+
+`railway.json` 已把排程固定為 `30 13 * * *`（UTC，即台灣每日 21:30），並設定執行完不重啟。正式的一鍵部署按鈕會在此 repository 發布為 Railway Template 後加入。
+
+部署後至少設定：
+
+- `GMAIL_ACCOUNTS_JSON`：一個或多個 Gmail OAuth 帳號。
+- `DRY_RUN=true`：第一次務必保持試跑。
+- `LOOKBACK=1d`：只處理最近一天。
+
+先手動 Run，從 logs 核對每個帳號的匹配數；確認規則後才把 `DRY_RUN=false`。Cron 執行完成後程式會退出；任一帳號失敗會留下 error log 並以非零狀態退出。
 
 ## Google Cloud 設定
 
@@ -20,15 +34,34 @@
 
 不要把 OAuth client secret 或 refresh token 貼到聊天、GitHub、Railway logs。
 
-## Railway
+## 選用 GLM AI
 
-1. 將此目錄推到私人 GitHub repository，從 Railway 建立 service。
-2. 新增 `GMAIL_ACCOUNTS_JSON`、`DRY_RUN=true`、`LOOKBACK=1d`。
-3. Settings → Cron Schedule 設成 `30 13 * * *`（UTC，即台灣每日 21:30）。
-4. 手動 Run 一次，從 logs 核對每帳號的匹配數；dry-run 不會建立標籤或寄摘要。
-5. 規則確認後才把 `DRY_RUN=false`，再手動 Run 並檢查 Gmail。
+在 Railway Variables 設定：
 
-Cron 執行完成後程式會退出；任一帳號失敗會留下 error log 並以非零狀態退出。
+- `AI_ENABLED=true`
+- `GLM_API_KEY`：你的 GLM API key，切勿提交到 GitHub。
+- `GLM_MODEL=glm-4.7-flashx`（可自行更換相容模型）
+- `AI_APPLY_LABELS=false`（建議先保持只建議）
+
+如果日後設成 `AI_APPLY_LABELS=true`，只有信心高於 `AI_CONFIDENCE_THRESHOLD` 的分類才會貼標籤；仍不會封存。
+
+## 選用 LINE 摘要
+
+LINE Notify 已終止，本專案使用 LINE Messaging API。建立 LINE Official Account 與 Messaging API channel 後，在 Railway Variables 設定：
+
+- `LINE_ENABLED=true`
+- `LINE_CHANNEL_ACCESS_TOKEN`
+- `LINE_USER_ID`（`U` 加 32 個字元）
+
+摘要會在所有 Gmail 帳號成功處理後推送。LINE 設定錯誤會讓該次 job 以失敗結束，方便從 Railway logs 發現。
+
+## 資料與隱私
+
+- Gmail：程式透過 Google OAuth 讀取郵件中繼資料、貼標籤、封存及寄摘要；不刪信。
+- Railway：執行環境持有 secrets；logs 只記帳號代號、分類與數量，不記 token 或 message ID。
+- GLM（選用）：寄件者、主旨、最多 500 字 snippet 會傳給你設定的 GLM API；程式不持久保存內容。
+- LINE（選用）：分類數量與 AI 短摘要會傳給 LINE Messaging API。
+- 停用／刪除：關閉相應環境變數即可停止第三方分享；撤銷 Google OAuth token 可終止 Gmail 存取；刪除 Railway service 可移除其 variables。
 
 ## 本機驗證
 

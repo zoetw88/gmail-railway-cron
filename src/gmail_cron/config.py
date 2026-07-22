@@ -22,6 +22,22 @@ class Rule:
     archive: bool = False
 
 
+@dataclass(frozen=True)
+class AiSettings:
+    api_key: str
+    base_url: str
+    model: str
+    confidence_threshold: float
+    max_messages: int
+    apply_labels: bool
+
+
+@dataclass(frozen=True)
+class LineSettings:
+    channel_access_token: str
+    user_id: str
+
+
 def load_accounts() -> list[Account]:
     raw = os.environ.get("GMAIL_ACCOUNTS_JSON")
     if not raw:
@@ -45,3 +61,36 @@ def load_rules(path: str | None = None) -> list[Rule]:
 def dry_run_enabled() -> bool:
     return os.environ.get("DRY_RUN", "true").lower() not in {"0", "false", "no"}
 
+
+def ai_settings() -> AiSettings | None:
+    if os.environ.get("AI_ENABLED", "false").lower() not in {"1", "true", "yes"}:
+        return None
+    api_key = os.environ.get("GLM_API_KEY", "")
+    if not api_key:
+        raise ValueError("GLM_API_KEY is required when AI_ENABLED=true")
+    threshold = float(os.environ.get("AI_CONFIDENCE_THRESHOLD", "0.90"))
+    if not 0 <= threshold <= 1:
+        raise ValueError("AI_CONFIDENCE_THRESHOLD must be between 0 and 1")
+    max_messages = int(os.environ.get("AI_MAX_MESSAGES", "20"))
+    if max_messages <= 0:
+        raise ValueError("AI_MAX_MESSAGES must be greater than 0")
+    return AiSettings(
+        api_key=api_key,
+        base_url=os.environ.get("GLM_BASE_URL", "https://api.z.ai/api/paas/v4").rstrip("/"),
+        model=os.environ.get("GLM_MODEL", "glm-4.7-flashx"),
+        confidence_threshold=threshold,
+        max_messages=max_messages,
+        apply_labels=os.environ.get("AI_APPLY_LABELS", "false").lower() in {"1", "true", "yes"},
+    )
+
+
+def line_settings() -> LineSettings | None:
+    if os.environ.get("LINE_ENABLED", "false").lower() not in {"1", "true", "yes"}:
+        return None
+    token = os.environ.get("LINE_CHANNEL_ACCESS_TOKEN", "")
+    user_id = os.environ.get("LINE_USER_ID", "")
+    if not token or not user_id:
+        raise ValueError("LINE_CHANNEL_ACCESS_TOKEN and LINE_USER_ID are required when LINE_ENABLED=true")
+    if not user_id.startswith("U") or len(user_id) != 33:
+        raise ValueError("LINE_USER_ID must look like U followed by 32 characters")
+    return LineSettings(channel_access_token=token, user_id=user_id)

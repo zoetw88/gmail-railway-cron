@@ -8,6 +8,8 @@ from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 
 from .config import Account, Rule
+from .ai import AiSuggestion, EmailPreview, GlmClassifier
+from .config import AiSettings
 
 SCOPES = [
     "https://www.googleapis.com/auth/gmail.modify",
@@ -20,6 +22,7 @@ class Result:
     account: str
     matched: dict[str, int] = field(default_factory=dict)
     archived: int = 0
+    ai_suggestions: list[AiSuggestion] = field(default_factory=list)
 
 
 def build_service(account: Account):
@@ -60,7 +63,23 @@ def list_message_ids(service, query: str) -> list[str]:
             return ids
 
 
-def organize_account(service, account: Account, rules: list[Rule], lookback: str, dry_run: bool) -> Result:
+def _message_preview(service, message_id: str) -> EmailPreview:
+    message = service.users().messages().get(
+        userId="me", id=message_id, format="metadata", metadataHeaders=["From", "Subject"]
+    ).execute()
+    headers = {item["name"].lower(): item["value"] for item in message.get("payload", {}).get("headers", [])}
+    return EmailPreview(message_id, headers.get("from", ""), headers.get("subject", ""), message.get("snippet", ""))
+
+
+def organize_account(
+    service,
+    account: Account,
+    rules: list[Rule],
+    lookback: str,
+    dry_run: bool,
+    ai: AiSettings | None = None,
+    classifier: GlmClassifier | None = None,
+) -> Result:
     labels_response = service.users().labels().list(userId="me").execute()
     labels = {label["name"]: label["id"] for label in labels_response.get("labels", [])}
     result = Result(account=account.name)
@@ -80,6 +99,21 @@ def organize_account(service, account: Account, rules: list[Rule], lookback: str
         if rule.archive:
             body["removeLabelIds"] = ["INBOX"]
         service.users().messages().batchModify(userId="me", body=body).execute()
+
+    if ai:
+        all_ids = list_message_ids(service, f"in:inbox newer_than:{lookback}")
+        candidate_ids = [message_id for message_id in all_ids if message_id not in handled][: ai.max_messages]
+        previews = [_message_preview(service, message_id) for message_id in candidate_ids]
+        active_classifier = classifier or GlmClassifier(ai)
+        result.ai_suggestions = active_classifier.classify(previews)
+        if ai.apply_labels and not dry_run:
+            for suggestion in result.ai_suggestions:
+                if suggestion.confidence < ai.confidence_threshold or suggestion.category == "Other":
+                    continue
+                label_id = ensure_label(service, suggestion.category, labels, dry_run=False)
+                service.users().messages().modify(
+                    userId="me", id=suggestion.message_id, body={"addLabelIds": [label_id]}
+                ).execute()
     return result
 
 
@@ -88,6 +122,8 @@ def send_summary(service, account: Account, result: Result, dry_run: bool) -> No
         return
     lines = [f"{label}: {count}" for label, count in result.matched.items()]
     lines.append(f"封存: {result.archived}")
+    for suggestion in result.ai_suggestions:
+        lines.append(f"AI {suggestion.category} ({suggestion.confidence:.0%}): {suggestion.summary}")
     message = EmailMessage()
     message["To"] = account.email
     message["From"] = account.email
@@ -96,3 +132,15 @@ def send_summary(service, account: Account, result: Result, dry_run: bool) -> No
     raw = base64.urlsafe_b64encode(message.as_bytes()).decode()
     service.users().messages().send(userId="me", body={"raw": raw}).execute()
 
+
+def format_result(result: Result, dry_run: bool) -> str:
+    mode = "DRY RUN" if dry_run else "LIVE"
+    lines = [f"📬 Gmail {result.account} — {mode}"]
+    lines.extend(f"{label}: {count}" for label, count in result.matched.items())
+    lines.append(f"封存: {result.archived}")
+    if result.ai_suggestions:
+        lines.append("AI 建議：")
+        lines.extend(
+            f"• {item.category} {item.confidence:.0%} — {item.summary}" for item in result.ai_suggestions
+        )
+    return "\n".join(lines)
