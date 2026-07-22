@@ -15,4 +15,4 @@
 - [x] MIT 授權與公開部署、資料分享、停用／刪除說明完整。
 - [x] 本機 Python 3.12 隔離環境測試通過（10 tests）。
 - [ ] GitHub Actions 測試通過（帳號 billing／spending limit 阻止 runner 啟動）。
-- [ ] repository 公開並發布 Railway Template（需使用者確認公開權限變更）。
+- [x] repository 公開並發布 Railway Template；公開頁面驗證 `Deploy Now` 與一個必要變數。

@@ -1,5 +1,7 @@
 # Gmail A/B/C/D 每日整理器
 
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/gmail-ai-daily-organizer)
+
 每天由 Railway Cron 啟動，依序整理多個 Gmail 帳號、貼標籤、封存明確促銷信，寄出摘要後退出。可選用 GLM 分類未匹配郵件，並把每日摘要推送到 LINE。規則採 first-match：同一封信只會套用第一個匹配規則。
 
 ## 安全預設
@@ -14,7 +16,7 @@
 
 ## Railway 部署
 
-`railway.json` 已把排程固定為 `30 13 * * *`（UTC，即台灣每日 21:30），並設定執行完不重啟。正式的一鍵部署按鈕會在此 repository 發布為 Railway Template 後加入。
+`railway.json` 已把排程固定為 `30 13 * * *`（UTC，即台灣每日 21:30），並設定執行完不重啟。點上方按鈕即可從公開 Railway Template 部署。
 
 部署後至少設定：
 
