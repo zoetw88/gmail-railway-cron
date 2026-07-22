@@ -1,0 +1,8 @@
+[
+  {"label":"Security","query":"from:(accounts.google.com OR github.com)"},
+  {"label":"Billing","query":"from:(paypal.com OR stripe.com)"},
+  {"label":"Job Alerts","query":"from:(linkedin.com OR 104.com.tw OR cakeresume.com)"},
+  {"label":"Reading","query":"from:(substack.com)"},
+  {"label":"Promotions","query":"category:promotions","archive":true}
+]
+
