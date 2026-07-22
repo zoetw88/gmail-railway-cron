@@ -75,3 +75,19 @@ def test_line_summary_can_include_email_without_changing_default_log_summary():
 
     assert "a@example.com" in format_result(result, False, account_email="a@example.com")
     assert "a@example.com" not in format_result(result, False)
+
+
+def test_ai_failure_does_not_stop_rule_based_organizing():
+    class FailingClassifier:
+        def classify(self, previews):
+            raise TimeoutError("provider response containing private data")
+
+    service = Service()
+    ai = AiSettings("secret", "https://example.test", "glm", 0.9, 20, False)
+    result = organize_account(
+        service, ACCOUNT, [Rule("Security", "from:google.com")], "1d", False, ai=ai, classifier=FailingClassifier()
+    )
+
+    assert result.matched == {"Security": 1}
+    assert result.ai_error == "TimeoutError"
+    assert "provider response" not in format_result(result, False)

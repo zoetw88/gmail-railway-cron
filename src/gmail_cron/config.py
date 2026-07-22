@@ -62,12 +62,16 @@ def dry_run_enabled() -> bool:
     return os.environ.get("DRY_RUN", "true").lower() not in {"0", "false", "no"}
 
 
+def email_summary_enabled() -> bool:
+    return os.environ.get("EMAIL_SUMMARY_ENABLED", "true").lower() in {"1", "true", "yes"}
+
+
 def ai_settings() -> AiSettings | None:
     if os.environ.get("AI_ENABLED", "false").lower() not in {"1", "true", "yes"}:
         return None
-    api_key = os.environ.get("GLM_API_KEY", "")
+    api_key = os.environ.get("AI_API_KEY") or os.environ.get("GLM_API_KEY", "")
     if not api_key:
-        raise ValueError("GLM_API_KEY is required when AI_ENABLED=true")
+        raise ValueError("AI_API_KEY or GLM_API_KEY is required when AI_ENABLED=true")
     threshold = float(os.environ.get("AI_CONFIDENCE_THRESHOLD", "0.90"))
     if not 0 <= threshold <= 1:
         raise ValueError("AI_CONFIDENCE_THRESHOLD must be between 0 and 1")
@@ -76,8 +80,8 @@ def ai_settings() -> AiSettings | None:
         raise ValueError("AI_MAX_MESSAGES must be greater than 0")
     return AiSettings(
         api_key=api_key,
-        base_url=os.environ.get("GLM_BASE_URL", "https://api.z.ai/api/paas/v4").rstrip("/"),
-        model=os.environ.get("GLM_MODEL", "glm-4.7-flashx"),
+        base_url=os.environ.get("AI_BASE_URL", os.environ.get("GLM_BASE_URL", "https://api.z.ai/api/paas/v4")).rstrip("/"),
+        model=os.environ.get("AI_MODEL", os.environ.get("GLM_MODEL", "glm-4.7-flashx")),
         confidence_threshold=threshold,
         max_messages=max_messages,
         apply_labels=os.environ.get("AI_APPLY_LABELS", "false").lower() in {"1", "true", "yes"},

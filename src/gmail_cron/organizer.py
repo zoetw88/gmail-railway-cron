@@ -23,6 +23,7 @@ class Result:
     matched: dict[str, int] = field(default_factory=dict)
     archived: int = 0
     ai_suggestions: list[AiSuggestion] = field(default_factory=list)
+    ai_error: str | None = None
 
 
 def build_service(account: Account):
@@ -105,7 +106,12 @@ def organize_account(
         candidate_ids = [message_id for message_id in all_ids if message_id not in handled][: ai.max_messages]
         previews = [_message_preview(service, message_id) for message_id in candidate_ids]
         active_classifier = classifier or GlmClassifier(ai)
-        result.ai_suggestions = active_classifier.classify(previews)
+        try:
+            result.ai_suggestions = active_classifier.classify(previews)
+        except Exception as exc:
+            # AI is optional. Record only the exception type so summaries stay useful
+            # without leaking provider responses or message content.
+            result.ai_error = type(exc).__name__
         if ai.apply_labels and not dry_run:
             for suggestion in result.ai_suggestions:
                 if suggestion.confidence < ai.confidence_threshold or suggestion.category == "Other":
@@ -124,6 +130,8 @@ def send_summary(service, account: Account, result: Result, dry_run: bool) -> No
     lines.append(f"封存: {result.archived}")
     for suggestion in result.ai_suggestions:
         lines.append(f"AI {suggestion.category} ({suggestion.confidence:.0%}): {suggestion.summary}")
+    if result.ai_error:
+        lines.append(f"AI 暫時無法使用（{result.ai_error}），規則整理已照常完成")
     message = EmailMessage()
     message["To"] = account.email
     message["From"] = account.email
@@ -144,4 +152,6 @@ def format_result(result: Result, dry_run: bool, account_email: str | None = Non
         lines.extend(
             f"• {item.category} {item.confidence:.0%} — {item.summary}" for item in result.ai_suggestions
         )
+    if result.ai_error:
+        lines.append(f"AI 暫時無法使用（{result.ai_error}），規則整理已照常完成")
     return "\n".join(lines)

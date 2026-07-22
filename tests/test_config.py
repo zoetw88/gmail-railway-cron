@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from gmail_cron.config import ai_settings, line_settings, load_accounts
+from gmail_cron.config import ai_settings, email_summary_enabled, line_settings, load_accounts
 
 
 def test_load_accounts(monkeypatch):
@@ -20,12 +20,25 @@ def test_duplicate_account_names_are_rejected(monkeypatch):
 
 def test_ai_requires_key_and_positive_limit(monkeypatch):
     monkeypatch.setenv("AI_ENABLED", "true")
-    with pytest.raises(ValueError, match="GLM_API_KEY"):
+    with pytest.raises(ValueError, match="AI_API_KEY"):
         ai_settings()
     monkeypatch.setenv("GLM_API_KEY", "secret")
     monkeypatch.setenv("AI_MAX_MESSAGES", "0")
     with pytest.raises(ValueError, match="greater than 0"):
         ai_settings()
+
+
+def test_provider_neutral_ai_settings_override_glm(monkeypatch):
+    monkeypatch.setenv("AI_ENABLED", "true")
+    monkeypatch.setenv("AI_API_KEY", "openrouter-secret")
+    monkeypatch.setenv("AI_BASE_URL", "https://openrouter.ai/api/v1/")
+    monkeypatch.setenv("AI_MODEL", "openai/gpt-4o")
+
+    settings = ai_settings()
+
+    assert settings.api_key == "openrouter-secret"
+    assert settings.base_url == "https://openrouter.ai/api/v1"
+    assert settings.model == "openai/gpt-4o"
 
 
 def test_line_user_id_is_validated(monkeypatch):
@@ -34,3 +47,8 @@ def test_line_user_id_is_validated(monkeypatch):
     monkeypatch.setenv("LINE_USER_ID", "not-a-user-id")
     with pytest.raises(ValueError, match="LINE_USER_ID"):
         line_settings()
+
+
+def test_email_summary_can_be_disabled(monkeypatch):
+    monkeypatch.setenv("EMAIL_SUMMARY_ENABLED", "false")
+    assert email_summary_enabled() is False

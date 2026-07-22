@@ -2,7 +2,7 @@
 
 [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/gmail-ai-daily-organizer)
 
-每天由 Railway Cron 啟動，依序整理多個 Gmail 帳號、貼標籤、封存明確促銷信，寄出摘要後退出。可選用 GLM 分類未匹配郵件，並把每日摘要推送到 LINE。規則採 first-match：同一封信只會套用第一個匹配規則。
+每天由 Railway Cron 啟動，依序整理多個 Gmail 帳號、貼標籤、封存明確促銷信，寄出摘要後退出。可選用 OpenRouter 或 GLM 分類未匹配郵件，並把每日摘要推送到 LINE。規則採 first-match：同一封信只會套用第一個匹配規則。
 
 ## 安全預設
 
@@ -22,6 +22,7 @@
 
 - `GMAIL_ACCOUNTS_JSON`：一個或多個 Gmail OAuth 帳號。
 - `DRY_RUN=true`：第一次務必保持試跑。
+- `EMAIL_SUMMARY_ENABLED=true`：設為 `false` 可只送 LINE、不寄 Gmail 摘要。
 - `LOOKBACK=1d`：只處理最近一天。
 
 先手動 Run，從 logs 核對每個帳號的匹配數；確認規則後才把 `DRY_RUN=false`。Cron 執行完成後程式會退出；任一帳號失敗會留下 error log 並以非零狀態退出。
@@ -36,9 +37,16 @@
 
 不要把 OAuth client secret 或 refresh token 貼到聊天、GitHub、Railway logs。
 
-## 選用 GLM AI
+## 選用 OpenRouter／GLM AI
 
-在 Railway Variables 設定：
+使用 OpenRouter 時，在 Railway Variables 設定：
+
+- `AI_ENABLED=true`
+- `AI_API_KEY`：OpenRouter API key，切勿提交到 GitHub。
+- `AI_BASE_URL=https://openrouter.ai/api/v1`
+- `AI_MODEL=openai/gpt-4o`（可替換為支援 JSON mode 的模型）
+
+直接使用 GLM 時則設定：
 
 - `AI_ENABLED=true`
 - `GLM_API_KEY`：你的 GLM API key，切勿提交到 GitHub。

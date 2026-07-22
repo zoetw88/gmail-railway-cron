@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 import os
 
-from .config import ai_settings, dry_run_enabled, line_settings, load_accounts, load_rules
+from .config import ai_settings, dry_run_enabled, email_summary_enabled, line_settings, load_accounts, load_rules
 from .line import push_line
 from .organizer import build_service, format_result, organize_account, send_summary
 
@@ -13,6 +13,7 @@ def main() -> None:
     accounts = load_accounts()
     rules = load_rules()
     dry_run = dry_run_enabled()
+    email_summary = email_summary_enabled()
     lookback = os.environ.get("LOOKBACK", "1d")
     ai = ai_settings()
     line = line_settings()
@@ -23,7 +24,8 @@ def main() -> None:
         try:
             service = build_service(account)
             result = organize_account(service, account, rules, lookback, dry_run, ai=ai)
-            send_summary(service, account, result, dry_run)
+            if email_summary:
+                send_summary(service, account, result, dry_run)
             summaries.append(format_result(result, dry_run, account_email=account.email))
             logging.info("result:\n%s", format_result(result, dry_run))
         except Exception:
