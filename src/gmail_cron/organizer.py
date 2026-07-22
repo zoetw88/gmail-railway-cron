@@ -142,16 +142,28 @@ def send_summary(service, account: Account, result: Result, dry_run: bool) -> No
 
 
 def format_result(result: Result, dry_run: bool, account_email: str | None = None) -> str:
-    mode = "DRY RUN" if dry_run else "LIVE"
-    account_label = f"{result.account} — {account_email}" if account_email else result.account
-    lines = [f"📬 Gmail {account_label} — {mode}"]
-    lines.extend(f"{label}: {count}" for label, count in result.matched.items())
-    lines.append(f"封存: {result.archived}")
+    mode = " · 測試" if dry_run else ""
+    account_label = f"{result.account}｜{account_email}" if account_email else result.account
+    lines = [f"📬 Gmail {account_label}{mode}"]
+    counts = [f"{label} {count}" for label, count in result.matched.items() if count]
+    lines.append("🏷️ " + ("・".join(counts) if counts else "無規則分類"))
+    lines.append(f"📥 已封存 {result.archived} 封")
     if result.ai_suggestions:
-        lines.append("AI 建議：")
+        lines.extend(["", "✨ AI 重點"])
         lines.extend(
-            f"• {item.category} {item.confidence:.0%} — {item.summary}" for item in result.ai_suggestions
+            f"{index}. 【{item.category} · {item.confidence:.0%}】{item.summary}"
+            for index, item in enumerate(result.ai_suggestions[:5], start=1)
         )
+        remaining = len(result.ai_suggestions) - 5
+        if remaining > 0:
+            lines.append(f"…還有 {remaining} 封")
     if result.ai_error:
-        lines.append(f"AI 暫時無法使用（{result.ai_error}），規則整理已照常完成")
+        lines.extend(["", f"⚠️ AI 暫時無法使用（{result.ai_error}）", "規則整理已照常完成"])
     return "\n".join(lines)
+
+
+def format_line_digest(summaries: list[str], dry_run: bool) -> str:
+    title = "🧹 Gmail 每日整理"
+    if dry_run:
+        title += "｜測試模式"
+    return f"{title}\n{'=' * 16}\n\n" + "\n\n━━━━━━━━\n\n".join(summaries)

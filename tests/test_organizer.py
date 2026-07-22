@@ -1,6 +1,6 @@
 from gmail_cron.ai import AiSuggestion
 from gmail_cron.config import Account, AiSettings, Rule
-from gmail_cron.organizer import Result, format_result, organize_account
+from gmail_cron.organizer import Result, format_line_digest, format_result, organize_account
 
 
 class Call:
@@ -75,6 +75,31 @@ def test_line_summary_can_include_email_without_changing_default_log_summary():
 
     assert "a@example.com" in format_result(result, False, account_email="a@example.com")
     assert "a@example.com" not in format_result(result, False)
+
+
+def test_line_summary_is_compact_and_limits_ai_items():
+    result = Result(
+        account="A",
+        matched={"Security": 2, "Billing": 1, "Reading": 0},
+        archived=3,
+        ai_suggestions=[AiSuggestion(f"m{i}", "Other", 0.95, f"摘要 {i}") for i in range(7)],
+    )
+    text = format_result(result, False, account_email="a@example.com")
+
+    assert "📬 Gmail A｜a@example.com" in text
+    assert "🏷️ Security 2・Billing 1" in text
+    assert "Reading" not in text
+    assert "📥 已封存 3 封" in text
+    assert "1. 【Other · 95%】摘要 0" in text
+    assert "摘要 5" not in text
+    assert "…還有 2 封" in text
+
+
+def test_line_digest_has_one_header_and_clear_account_separator():
+    text = format_line_digest(["📬 Gmail A", "📬 Gmail B"], False)
+
+    assert text.startswith("🧹 Gmail 每日整理\n================")
+    assert text.count("━━━━━━━━") == 1
 
 
 def test_ai_failure_does_not_stop_rule_based_organizing():

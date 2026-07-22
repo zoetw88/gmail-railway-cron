@@ -5,7 +5,7 @@ import os
 
 from .config import ai_settings, dry_run_enabled, email_summary_enabled, line_settings, load_accounts, load_rules
 from .line import push_line
-from .organizer import build_service, format_result, organize_account, send_summary
+from .organizer import build_service, format_line_digest, format_result, organize_account, send_summary
 
 
 def main() -> None:
@@ -34,7 +34,7 @@ def main() -> None:
     if failures:
         raise SystemExit(f"Failed accounts: {', '.join(failures)}")
     if line:
-        push_line(line, "\n\n".join(summaries))
+        push_line(line, format_line_digest(summaries, dry_run))
 
 
 if __name__ == "__main__":
