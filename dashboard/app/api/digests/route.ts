@@ -36,8 +36,8 @@ function validPayload(value: unknown): value is DigestRun {
 
 export async function POST(request: Request) {
   const { DB, INGEST_TOKEN } = bindings();
-  const authorization = request.headers.get("authorization");
-  if (!INGEST_TOKEN || authorization !== `Bearer ${INGEST_TOKEN}`) {
+  const ingestToken = request.headers.get("x-ingest-token");
+  if (!INGEST_TOKEN || ingestToken !== INGEST_TOKEN) {
     return Response.json({ error: "unauthorized" }, { status: 401 });
   }
   if (!DB) return Response.json({ error: "database unavailable" }, { status: 503 });

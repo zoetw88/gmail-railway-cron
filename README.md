@@ -74,6 +74,7 @@ Railway Variables：
 - `DASHBOARD_ENABLED=true`
 - `DASHBOARD_URL=https://你的網站網址`
 - `DASHBOARD_INGEST_TOKEN`（與網站端 `INGEST_TOKEN` 相同的隨機密鑰）
+- `DASHBOARD_ACCESS_TOKEN`（私人 Sites 提供給 Railway 的機器通行權杖）
 
 網站端另需設定 `ALLOWED_VIEWER_EMAILS`，以逗號分隔允許登入的 Email。若以儀表板取代 LINE，可將 `LINE_ENABLED=false`。
 

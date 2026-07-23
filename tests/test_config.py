@@ -62,4 +62,5 @@ def test_dashboard_requires_https_and_token(monkeypatch):
 
     monkeypatch.setenv("DASHBOARD_URL", "https://example.test/")
     monkeypatch.setenv("DASHBOARD_INGEST_TOKEN", "secret")
+    monkeypatch.setenv("DASHBOARD_ACCESS_TOKEN", "access-secret")
     assert dashboard_settings().url == "https://example.test"

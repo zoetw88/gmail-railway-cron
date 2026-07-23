@@ -23,7 +23,7 @@ test("source keeps data minimization and server-side authorization explicit", as
 
   assert.match(page, /ALLOWED_VIEWER_EMAILS/);
   assert.match(page, /30 天後自動刪除/);
-  assert.match(route, /authorization !== `Bearer \$\{INGEST_TOKEN\}`/);
+  assert.match(route, /request\.headers\.get\("x-ingest-token"\)/);
   assert.match(route, /DELETE FROM digest_runs/);
   assert.doesNotMatch(publisher, /message_id|confidence/);
 });

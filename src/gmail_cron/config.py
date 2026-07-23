@@ -42,6 +42,7 @@ class LineSettings:
 class DashboardSettings:
     url: str
     ingest_token: str
+    access_token: str
 
 
 def load_accounts() -> list[Account]:
@@ -111,6 +112,9 @@ def dashboard_settings() -> DashboardSettings | None:
         return None
     url = os.environ.get("DASHBOARD_URL", "").rstrip("/")
     token = os.environ.get("DASHBOARD_INGEST_TOKEN", "")
-    if not url.startswith("https://") or not token:
-        raise ValueError("DASHBOARD_URL (https) and DASHBOARD_INGEST_TOKEN are required")
-    return DashboardSettings(url=url, ingest_token=token)
+    access_token = os.environ.get("DASHBOARD_ACCESS_TOKEN", "")
+    if not url.startswith("https://") or not token or not access_token:
+        raise ValueError(
+            "DASHBOARD_URL (https), DASHBOARD_INGEST_TOKEN, and DASHBOARD_ACCESS_TOKEN are required"
+        )
+    return DashboardSettings(url=url, ingest_token=token, access_token=access_token)

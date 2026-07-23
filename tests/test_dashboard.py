@@ -20,7 +20,7 @@ def test_dashboard_publish_excludes_message_ids_and_confidence():
         captured.update(url=url, headers=headers, payload=json.loads(body))
 
     publish_dashboard(
-        DashboardSettings("https://dashboard.example", "ingest-secret"),
+        DashboardSettings("https://dashboard.example", "ingest-secret", "access-secret"),
         [account],
         [result],
         False,
@@ -28,7 +28,8 @@ def test_dashboard_publish_excludes_message_ids_and_confidence():
     )
 
     assert captured["url"] == "https://dashboard.example/api/digests"
-    assert captured["headers"]["Authorization"] == "Bearer ingest-secret"
+    assert captured["headers"]["Authorization"] == "Bearer access-secret"
+    assert captured["headers"]["X-Ingest-Token"] == "ingest-secret"
     serialized = json.dumps(captured["payload"])
     assert "private-message-id" not in serialized
     assert "0.98" not in serialized
