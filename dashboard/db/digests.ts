@@ -29,6 +29,9 @@ type SiteEnv = {
   VAPID_PUBLIC_KEY?: string;
   VAPID_PRIVATE_KEY?: string;
   VAPID_SUBJECT?: string;
+  RAILWAY_PROJECT_TOKEN?: string;
+  RAILWAY_SERVICE_ID?: string;
+  RAILWAY_ENVIRONMENT_ID?: string;
 };
 
 export function bindings(): SiteEnv {
@@ -59,6 +62,12 @@ export async function initializeDatabase(db: D1Database) {
   await db.prepare(
     "CREATE INDEX IF NOT EXISTS push_subscriptions_viewer_idx ON push_subscriptions(viewer_email)",
   ).run();
+  await db.prepare(`
+    CREATE TABLE IF NOT EXISTS manual_runs (
+      id TEXT PRIMARY KEY,
+      requested_at TEXT NOT NULL
+    )
+  `).run();
 }
 
 export async function getDigestRuns(): Promise<DigestRun[]> {

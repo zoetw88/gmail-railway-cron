@@ -2,6 +2,7 @@ import { getChatGPTUser, chatGPTSignInPath, chatGPTSignOutPath } from "./chatgpt
 import { getDigestRuns, type DigestRun } from "@/db/digests";
 import { NotificationControl } from "./notification-control";
 import { isAllowedViewer } from "./viewer-access";
+import { OrganizeNowControl } from "./organize-now-control";
 
 export const dynamic = "force-dynamic";
 
@@ -141,6 +142,7 @@ export default async function Home() {
       </header>
 
       <NotificationControl />
+      <OrganizeNowControl />
 
       {!active ? (
         <section className="empty-state">

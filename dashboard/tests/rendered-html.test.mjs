@@ -15,13 +15,14 @@ test("build emits the dashboard worker and removes starter preview content", asy
 });
 
 test("source keeps data minimization and server-side authorization explicit", async () => {
-  const [page, route, publisher, push, subscriptions, viewerAccess, manifest, serviceWorker] = await Promise.all([
+  const [page, route, publisher, push, subscriptions, viewerAccess, organizeNow, manifest, serviceWorker] = await Promise.all([
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/api/digests/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../../src/gmail_cron/dashboard.py", import.meta.url), "utf8"),
     readFile(new URL("../db/push.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/push/subscriptions/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/viewer-access.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/organize-now/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../public/manifest.webmanifest", import.meta.url), "utf8"),
     readFile(new URL("../public/sw.js", import.meta.url), "utf8"),
   ]);
@@ -55,4 +56,10 @@ test("source keeps data minimization and server-side authorization explicit", as
   assert.equal(JSON.parse(manifest).display, "standalone");
   assert.match(serviceWorker, /notificationclick/);
   assert.match(serviceWorker, /openWindow/);
+  assert.match(page, /OrganizeNowControl/);
+  assert.match(organizeNow, /getAllowedViewer/);
+  assert.match(organizeNow, /serviceInstanceRedeploy/);
+  assert.match(organizeNow, /project-access-token/);
+  assert.match(organizeNow, /datetime\('now', '-5 minutes'\)/);
+  assert.doesNotMatch(organizeNow, /request\.json/);
 });

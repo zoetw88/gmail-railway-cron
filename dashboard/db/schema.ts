@@ -24,3 +24,8 @@ export const pushSubscriptions = sqliteTable(
   },
   (table) => [index("push_subscriptions_viewer_idx").on(table.viewerEmail)],
 );
+
+export const manualRuns = sqliteTable("manual_runs", {
+  id: text("id").primaryKey(),
+  requestedAt: text("requested_at").notNull(),
+});
