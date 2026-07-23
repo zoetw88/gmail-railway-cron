@@ -151,7 +151,7 @@ def format_result(result: Result, dry_run: bool, account_email: str | None = Non
     if result.ai_suggestions:
         lines.extend(["", "✨ AI 重點"])
         lines.extend(
-            f"{index}. 【{item.category} · {item.confidence:.0%}】{item.summary}"
+            f"{index}. 【{item.category}】{item.summary}"
             for index, item in enumerate(result.ai_suggestions[:5], start=1)
         )
         remaining = len(result.ai_suggestions) - 5

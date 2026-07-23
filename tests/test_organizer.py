@@ -90,7 +90,8 @@ def test_line_summary_is_compact_and_limits_ai_items():
     assert "🏷️ Security 2・Billing 1" in text
     assert "Reading" not in text
     assert "📥 已封存 3 封" in text
-    assert "1. 【Other · 95%】摘要 0" in text
+    assert "1. 【Other】摘要 0" in text
+    assert "95%" not in text
     assert "摘要 5" not in text
     assert "…還有 2 封" in text
 
