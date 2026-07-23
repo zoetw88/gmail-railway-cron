@@ -21,7 +21,8 @@
 - 2026-07-23: Railway production variables were present and the deployed source matched commit `0f8473b`.
 - 2026-07-23: A production-configured manual run completed all four Gmail accounts and published the digest.
 - 2026-07-23: The authenticated production dashboard rendered four account cards, 27 classifications, 5 archived messages, and 35 AI highlights.
+- 2026-07-23: Sites version 3 deployed successfully; a new four-account digest rendered 36 AI highlights with account-specific Gmail thread URLs and visible subjects.
 
 ## Blockers
 
-- 2026-07-23: The Gmail-link version passed local build and tests, but the Sites deployment connector became unavailable before version save/deploy. Railway keeps a legacy-payload retry so scheduled ingestion remains operational until the site version can be published.
+- Resolved 2026-07-23: the Sites connector recovered and version 3 was saved and deployed. Railway retains the legacy-payload retry for safe rollback compatibility.
