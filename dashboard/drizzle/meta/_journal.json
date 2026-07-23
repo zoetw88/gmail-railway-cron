@@ -15,6 +15,13 @@
       "when": 1784790036415,
       "tag": "0001_round_psynapse",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1784809962259,
+      "tag": "0002_sour_jazinda",
+      "breakpoints": true
     }
   ]
 }

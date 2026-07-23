@@ -10,3 +10,17 @@ export const digestRuns = sqliteTable(
   },
   (table) => [index("digest_runs_created_at_idx").on(table.createdAt)],
 );
+
+export const pushSubscriptions = sqliteTable(
+  "push_subscriptions",
+  {
+    endpoint: text("endpoint").primaryKey(),
+    viewerEmail: text("viewer_email").notNull(),
+    p256dh: text("p256dh").notNull(),
+    auth: text("auth").notNull(),
+    expirationTime: integer("expiration_time"),
+    createdAt: text("created_at").notNull(),
+    lastDigestId: text("last_digest_id"),
+  },
+  (table) => [index("push_subscriptions_viewer_idx").on(table.viewerEmail)],
+);

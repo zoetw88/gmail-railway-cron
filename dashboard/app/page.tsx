@@ -1,5 +1,7 @@
 import { getChatGPTUser, chatGPTSignInPath, chatGPTSignOutPath } from "./chatgpt-auth";
 import { getDigestRuns, type DigestRun } from "@/db/digests";
+import { NotificationControl } from "./notification-control";
+import { isAllowedViewer } from "./viewer-access";
 
 export const dynamic = "force-dynamic";
 
@@ -75,15 +77,6 @@ function HighlightList({ items, empty }: { items: CombinedSuggestion[]; empty: s
   );
 }
 
-function authorized(email: string) {
-  const configured = process.env.ALLOWED_VIEWER_EMAILS ?? "";
-  return configured
-    .split(",")
-    .map((value) => value.trim().toLowerCase())
-    .filter(Boolean)
-    .includes(email.toLowerCase());
-}
-
 export default async function Home() {
   const user = await getChatGPTUser();
   const localPreview = process.env.NODE_ENV === "development";
@@ -101,7 +94,7 @@ export default async function Home() {
     );
   }
 
-  if (user && !authorized(user.email)) {
+  if (user && !isAllowedViewer(user.email)) {
     return (
       <main className="gate">
         <div className="gate-card">
@@ -146,6 +139,8 @@ export default async function Home() {
           {user && <a href={chatGPTSignOutPath("/")}>登出</a>}
         </div>
       </header>
+
+      <NotificationControl />
 
       {!active ? (
         <section className="empty-state">

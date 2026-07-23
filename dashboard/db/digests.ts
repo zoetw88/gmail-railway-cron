@@ -26,6 +26,9 @@ export type DigestRun = {
 type SiteEnv = {
   DB?: D1Database;
   INGEST_TOKEN?: string;
+  VAPID_PUBLIC_KEY?: string;
+  VAPID_PRIVATE_KEY?: string;
+  VAPID_SUBJECT?: string;
 };
 
 export function bindings(): SiteEnv {
@@ -42,6 +45,20 @@ export async function initializeDatabase(db: D1Database) {
     )
   `).run();
   await db.prepare("CREATE INDEX IF NOT EXISTS digest_runs_created_at_idx ON digest_runs(created_at DESC)").run();
+  await db.prepare(`
+    CREATE TABLE IF NOT EXISTS push_subscriptions (
+      endpoint TEXT PRIMARY KEY,
+      viewer_email TEXT NOT NULL,
+      p256dh TEXT NOT NULL,
+      auth TEXT NOT NULL,
+      expiration_time INTEGER,
+      created_at TEXT NOT NULL,
+      last_digest_id TEXT
+    )
+  `).run();
+  await db.prepare(
+    "CREATE INDEX IF NOT EXISTS push_subscriptions_viewer_idx ON push_subscriptions(viewer_email)",
+  ).run();
 }
 
 export async function getDigestRuns(): Promise<DigestRun[]> {

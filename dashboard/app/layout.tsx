@@ -19,8 +19,19 @@ export async function generateMetadata(): Promise<Metadata> {
   const protocol = requestHeaders.get("x-forwarded-proto") ?? "https";
   const image = host ? `${protocol}://${host}/og.png` : undefined;
   return {
-    title: "Inbox Daily｜每日信箱整理",
+    title: "Zoe Inbox｜緊急信件通知",
     description: "四個 Gmail 帳號的私人每日整理摘要。",
+    manifest: "/manifest.webmanifest",
+    themeColor: "#174c3a",
+    appleWebApp: {
+      capable: true,
+      statusBarStyle: "black-translucent",
+      title: "Zoe Inbox",
+    },
+    icons: {
+      icon: "/icon-192.png",
+      apple: "/icon-192.png",
+    },
     openGraph: image ? { images: [{ url: image }] } : undefined,
     twitter: image ? { card: "summary_large_image", images: [image] } : undefined,
   };

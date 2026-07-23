@@ -3,4 +3,5 @@
 __pycache__/
 *.pyc
 token*.json
-
+.tmp-test-venv/
+*.egg-info/

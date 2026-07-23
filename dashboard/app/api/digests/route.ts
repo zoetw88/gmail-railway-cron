@@ -1,4 +1,5 @@
 import { bindings, initializeDatabase, type AccountDigest, type DigestRun } from "@/db/digests";
+import { sendUrgentPushes } from "@/db/push";
 
 export const dynamic = "force-dynamic";
 
@@ -64,5 +65,6 @@ export async function POST(request: Request) {
     ).bind(payload.id, payload.createdAt, payload.dryRun ? 1 : 0, JSON.stringify(payload)),
     DB.prepare("DELETE FROM digest_runs WHERE created_at < datetime('now', '-30 days')"),
   ]);
+  await sendUrgentPushes(payload);
   return Response.json({ ok: true }, { status: 201 });
 }
