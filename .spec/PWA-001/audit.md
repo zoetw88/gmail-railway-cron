@@ -15,4 +15,5 @@
 - `npm test`：建置成功，2/2 儀表板契約測試通過。
 - 隔離 Python 環境 `python -m pytest -q`：23/23 通過。
 - Web Push 加密 smoke：成功建立 VAPID Authorization 與加密 payload。
+- 正式網站 v8 瀏覽器 smoke：標題與 manifest 正確載入；通知元件由初始化狀態切換至瀏覽器權限狀態，無卡住。
 - `npm audit --omit=dev`：Next 本體已升級至 16.2.11；仍回報 Next 內含的 PostCSS 與 Sharp 上游弱點，現有套件線無相容修補版。此站不接受使用者 CSS、也不使用不可信圖片轉換，曝險面受限。
