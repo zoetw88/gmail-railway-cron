@@ -14,7 +14,11 @@
 ## 驗證證據
 
 - `npm test`：建置成功，2/2 儀表板契約測試通過。
-- 隔離 Python 環境 `python -m pytest -q`：23/23 通過。
+- 隔離 Python 環境 `python -m pytest -q`：24/24 通過。
 - Web Push 加密 smoke：成功建立 VAPID Authorization 與加密 payload。
 - 正式網站 v8 瀏覽器 smoke：標題與 manifest 正確載入；通知元件由初始化狀態切換至瀏覽器權限狀態，無卡住。
+- Railway 手動執行服務健康檢查回傳 `{"ok":true,"running":false}`，部署設定為無 Cron、閒置休眠。
+- 正式網站 v9 瀏覽器 smoke：畫面只有一個「立即整理」按鈕；點擊後顯示「已啟動」，Railway 收到 `POST /run` 202。
+- 即時整理整合 smoke：Gmail A、B、C、D 都完成；Gmail A 分類 1 封、Gmail D 分類 3 封，其餘無新規則分類，全部封存 0 封。
+- 摘要回寫 smoke：正式儀表板更新為 7 月 24 日 01:49，顯示 4 封規則分類、4 個 AI 重點，並保留四個信箱的完成狀態與 Gmail 深層連結。
 - `npm audit --omit=dev`：Next 本體已升級至 16.2.11；仍回報 Next 內含的 PostCSS 與 Sharp 上游弱點，現有套件線無相容修補版。此站不接受使用者 CSS、也不使用不可信圖片轉換，曝險面受限。
