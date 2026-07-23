@@ -23,6 +23,7 @@
 - 2026-07-23: A production-configured manual run completed all four Gmail accounts and published the digest.
 - 2026-07-23: The authenticated production dashboard rendered four account cards, 27 classifications, 5 archived messages, and 35 AI highlights.
 - 2026-07-23: Sites version 3 deployed successfully; a new four-account digest rendered 36 AI highlights with account-specific Gmail thread URLs and visible subjects.
+- 2026-07-23: Sites version 5 deployed successfully. Production browser verification showed one combined four-mailbox overview with 2 urgent and 33 important/general items, source-account badges, category badges, and working Gmail thread URLs.
 
 ## Blockers
 
