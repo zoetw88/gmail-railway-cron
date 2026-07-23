@@ -29,9 +29,8 @@ type SiteEnv = {
   VAPID_PUBLIC_KEY?: string;
   VAPID_PRIVATE_KEY?: string;
   VAPID_SUBJECT?: string;
-  RAILWAY_PROJECT_TOKEN?: string;
-  RAILWAY_SERVICE_ID?: string;
-  RAILWAY_ENVIRONMENT_ID?: string;
+  MANUAL_RUN_URL?: string;
+  MANUAL_RUN_TOKEN?: string;
 };
 
 export function bindings(): SiteEnv {

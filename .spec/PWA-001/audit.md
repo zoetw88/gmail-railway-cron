@@ -9,7 +9,7 @@
 - 授權：訂閱新增、查詢與刪除皆要求 ChatGPT 登入且電子郵件在允許清單。
 - 濫用防護：每位檢視者最多 10 個裝置；輸入長度與 endpoint 協定受限。
 - 金鑰：VAPID 私鑰僅存 Sites secret，不提交版本控制。
-- 即時整理：Railway Project Token 限定單一 production environment，只存 Sites secret；服務與環境 ID 固定於伺服器端，瀏覽器不可指定。
+- 即時整理：使用隨機共享密鑰保護獨立 Railway 喚醒端點；密鑰只存在 Railway 與 Sites secrets，瀏覽器不可讀取或指定執行內容。
 
 ## 驗證證據
 

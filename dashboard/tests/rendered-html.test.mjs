@@ -58,8 +58,8 @@ test("source keeps data minimization and server-side authorization explicit", as
   assert.match(serviceWorker, /openWindow/);
   assert.match(page, /OrganizeNowControl/);
   assert.match(organizeNow, /getAllowedViewer/);
-  assert.match(organizeNow, /serviceInstanceRedeploy/);
-  assert.match(organizeNow, /project-access-token/);
+  assert.match(organizeNow, /x-manual-run-token/);
+  assert.match(organizeNow, /MANUAL_RUN_URL/);
   assert.match(organizeNow, /datetime\('now', '-5 minutes'\)/);
   assert.doesNotMatch(organizeNow, /request\.json/);
 });

@@ -4,24 +4,16 @@ import { bindings, initializeDatabase } from "@/db/digests";
 export const dynamic = "force-dynamic";
 
 const COOLDOWN_SECONDS = 300;
-const RAILWAY_API = "https://backboard.railway.com/graphql/v2";
-const REDEPLOY_MUTATION = `
-  mutation serviceInstanceRedeploy($environmentId: String!, $serviceId: String!) {
-    serviceInstanceRedeploy(environmentId: $environmentId, serviceId: $serviceId)
-  }
-`;
-
 export async function POST() {
   if (!(await getAllowedViewer())) {
     return Response.json({ error: "unauthorized" }, { status: 401 });
   }
   const {
     DB,
-    RAILWAY_PROJECT_TOKEN,
-    RAILWAY_SERVICE_ID,
-    RAILWAY_ENVIRONMENT_ID,
+    MANUAL_RUN_URL,
+    MANUAL_RUN_TOKEN,
   } = bindings();
-  if (!DB || !RAILWAY_PROJECT_TOKEN || !RAILWAY_SERVICE_ID || !RAILWAY_ENVIRONMENT_ID) {
+  if (!DB || !MANUAL_RUN_URL || !MANUAL_RUN_TOKEN) {
     return Response.json({ error: "manual run unavailable" }, { status: 503 });
   }
 
@@ -43,33 +35,20 @@ export async function POST() {
     );
   }
 
-  const response = await fetch(RAILWAY_API, {
+  const response = await fetch(`${MANUAL_RUN_URL}/run`, {
     method: "POST",
     headers: {
-      "content-type": "application/json",
-      "project-access-token": RAILWAY_PROJECT_TOKEN,
+      "x-manual-run-token": MANUAL_RUN_TOKEN,
     },
-    body: JSON.stringify({
-      query: REDEPLOY_MUTATION,
-      variables: {
-        environmentId: RAILWAY_ENVIRONMENT_ID,
-        serviceId: RAILWAY_SERVICE_ID,
-      },
-    }),
   });
-  const result = (await response.json().catch(() => null)) as {
-    data?: { serviceInstanceRedeploy?: boolean };
-    errors?: unknown[];
-  } | null;
-  if (!response.ok || result?.errors?.length || result?.data?.serviceInstanceRedeploy !== true) {
+  if (!response.ok) {
     await DB.prepare(`
       UPDATE manual_runs
       SET requested_at = datetime('now', '-10 minutes')
       WHERE id = 'all-mailboxes'
     `).run();
-    return Response.json({ error: "railway rejected request" }, { status: 502 });
+    return Response.json({ error: "manual runner rejected request" }, { status: 502 });
   }
 
   return Response.json({ ok: true }, { status: 202 });
 }
-
