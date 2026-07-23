@@ -34,6 +34,7 @@ class Result:
     ai_suggestions: list[AiSuggestion] = field(default_factory=list)
     ai_labels_applied: int = 0
     ai_error: str | None = None
+    handled_message_ids: list[str] = field(default_factory=list, repr=False)
 
 
 def build_service(account: Account):
@@ -96,6 +97,7 @@ def organize_account(
     dry_run: bool,
     ai: AiSettings | None = None,
     classifier: GlmClassifier | None = None,
+    exclude_line_notified: bool = False,
 ) -> Result:
     labels_response = service.users().labels().list(userId="me").execute()
     labels = {label["name"]: label["id"] for label in labels_response.get("labels", [])}
@@ -104,7 +106,8 @@ def organize_account(
 
     for rule in rules:
         label_id = ensure_label(service, rule.label, labels, dry_run)
-        query = f"in:inbox newer_than:{lookback} ({rule.query})"
+        notification_filter = ' -label:"Inbox Daily/已推送 LINE"' if exclude_line_notified else ""
+        query = f"in:inbox newer_than:{lookback}{notification_filter} ({rule.query})"
         message_ids = [message_id for message_id in list_message_ids(service, query) if message_id not in handled]
         handled.update(message_ids)
         result.matched[rule.label] = len(message_ids)
@@ -118,7 +121,8 @@ def organize_account(
         service.users().messages().batchModify(userId="me", body=body).execute()
 
     if ai:
-        all_ids = list_message_ids(service, f"in:inbox newer_than:{lookback}")
+        notification_filter = ' -label:"Inbox Daily/已推送 LINE"' if exclude_line_notified else ""
+        all_ids = list_message_ids(service, f"in:inbox newer_than:{lookback}{notification_filter}")
         candidate_ids = [message_id for message_id in all_ids if message_id not in handled][: ai.max_messages]
         previews = [_message_preview(service, message_id) for message_id in candidate_ids]
         active_classifier = classifier or GlmClassifier(ai)
@@ -138,7 +142,24 @@ def organize_account(
                     userId="me", id=suggestion.message_id, body={"addLabelIds": [label_id]}
                 ).execute()
                 result.ai_labels_applied += 1
+    result.handled_message_ids = sorted(handled | {item.message_id for item in result.ai_suggestions})
     return result
+
+
+def mark_line_notified(service, result: Result) -> None:
+    if not result.handled_message_ids:
+        return
+    labels_response = service.users().labels().list(userId="me").execute()
+    labels = {label["name"]: label["id"] for label in labels_response.get("labels", [])}
+    label_id = ensure_label(service, "Inbox Daily/已推送 LINE", labels, dry_run=False)
+    for start in range(0, len(result.handled_message_ids), 1000):
+        service.users().messages().batchModify(
+            userId="me",
+            body={
+                "ids": result.handled_message_ids[start : start + 1000],
+                "addLabelIds": [label_id],
+            },
+        ).execute()
 
 
 def send_summary(service, account: Account, result: Result, dry_run: bool) -> None:
@@ -185,3 +206,28 @@ def format_line_digest(summaries: list[str], dry_run: bool) -> str:
     if dry_run:
         title += "｜測試模式"
     return f"{title}\n{'=' * 16}\n\n" + "\n\n━━━━━━━━\n\n".join(summaries)
+
+
+def format_priority_line_digest(results: list[Result], dry_run: bool) -> str:
+    title = "📮 Inbox Daily｜每小時整理"
+    if dry_run:
+        title += "（測試）"
+    suggestions = [
+        (result.account, suggestion)
+        for result in results
+        for suggestion in result.ai_suggestions
+    ]
+    urgent = [(account, item) for account, item in suggestions if item.priority == "urgent"]
+    general = [(account, item) for account, item in suggestions if item.priority != "urgent"]
+    lines = [title, "━━━━━━━━━━━━", "", f"🔴 需要先處理 {len(urgent)} 封"]
+    lines.extend(f"• Gmail {account}｜{item.summary}" for account, item in urgent[:5])
+    if not urgent:
+        lines.append("目前沒有緊急郵件")
+    lines.extend(["", f"🟢 重要與一般 {len(general)} 封"])
+    lines.extend(f"• Gmail {account}｜{item.summary}" for account, item in general[:8])
+    if not general:
+        lines.append("這次沒有其他摘要")
+    remaining = max(0, len(urgent) - 5) + max(0, len(general) - 8)
+    if remaining:
+        lines.extend(["", f"另有 {remaining} 封，請到 Inbox Daily 查看"])
+    return "\n".join(lines)

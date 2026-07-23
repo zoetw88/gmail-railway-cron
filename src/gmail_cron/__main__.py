@@ -14,7 +14,14 @@ from .config import (
 )
 from .dashboard import publish_dashboard
 from .line import push_line
-from .organizer import build_service, format_line_digest, format_result, organize_account, send_summary
+from .organizer import (
+    build_service,
+    format_priority_line_digest,
+    format_result,
+    mark_line_notified,
+    organize_account,
+    send_summary,
+)
 
 
 def main() -> None:
@@ -34,7 +41,15 @@ def main() -> None:
     for account in accounts:
         try:
             service = build_service(account)
-            result = organize_account(service, account, rules, lookback, dry_run, ai=ai)
+            result = organize_account(
+                service,
+                account,
+                rules,
+                lookback,
+                dry_run,
+                ai=ai,
+                exclude_line_notified=line is not None,
+            )
             if email_summary:
                 send_summary(service, account, result, dry_run)
             results.append(result)
@@ -48,7 +63,10 @@ def main() -> None:
     if dashboard:
         publish_dashboard(dashboard, accounts, results, dry_run)
     if line:
-        push_line(line, format_line_digest(summaries, dry_run))
+        push_line(line, format_priority_line_digest(results, dry_run))
+        if not dry_run:
+            for account, result in zip(accounts, results, strict=True):
+                mark_line_notified(build_service(account), result)
 
 
 if __name__ == "__main__":

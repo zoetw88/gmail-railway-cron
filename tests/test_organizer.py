@@ -1,6 +1,13 @@
 from gmail_cron.ai import AiSuggestion
 from gmail_cron.config import Account, AiSettings, Rule
-from gmail_cron.organizer import Result, format_line_digest, format_result, organize_account
+from gmail_cron.organizer import (
+    Result,
+    format_line_digest,
+    format_priority_line_digest,
+    format_result,
+    mark_line_notified,
+    organize_account,
+)
 
 
 class Call:
@@ -14,6 +21,7 @@ class Labels:
             {"name": "Security", "id": "L1"},
             {"name": "安全/安全通知", "id": "L2"},
         ]})
+    def create(self, **kwargs): return Call({"id": "LN", "name": kwargs["body"]["name"]})
 
 
 class Messages:
@@ -123,6 +131,35 @@ def test_line_digest_has_one_header_and_clear_account_separator():
 
     assert text.startswith("🧹 Gmail 每日整理\n================")
     assert text.count("━━━━━━━━") == 1
+
+
+def test_priority_line_digest_puts_urgent_before_general():
+    results = [
+        Result(
+            account="A",
+            ai_suggestions=[
+                AiSuggestion("m1", "Reading", 0.95, "一般摘要", priority="normal"),
+                AiSuggestion("m2", "Security", 0.99, "緊急摘要", priority="urgent"),
+            ],
+        )
+    ]
+
+    text = format_priority_line_digest(results, False)
+
+    assert text.index("🔴 需要先處理") < text.index("🟢 重要與一般")
+    assert text.index("緊急摘要") < text.index("一般摘要")
+    assert "Gmail A" in text
+
+
+def test_mark_line_notified_adds_deduplication_label():
+    service = Service()
+    result = Result(account="A", handled_message_ids=["m1", "m2"])
+
+    mark_line_notified(service, result)
+
+    assert service.user_api.message_api.modified == [
+        {"ids": ["m1", "m2"], "addLabelIds": ["LN"]}
+    ]
 
 
 def test_ai_failure_does_not_stop_rule_based_organizing():

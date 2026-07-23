@@ -3,7 +3,6 @@ import { getDigestRuns, type DigestRun } from "@/db/digests";
 
 export const dynamic = "force-dynamic";
 
-type SearchParams = Promise<{ run?: string }>;
 type CombinedSuggestion = DigestRun["accounts"][number]["aiSuggestions"][number] & {
   accountName: string;
   accountEmail: string;
@@ -85,7 +84,7 @@ function authorized(email: string) {
     .includes(email.toLowerCase());
 }
 
-export default async function Home({ searchParams }: { searchParams: SearchParams }) {
+export default async function Home() {
   const user = await getChatGPTUser();
   const localPreview = process.env.NODE_ENV === "development";
 
@@ -116,8 +115,7 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
   }
 
   const runs = await getDigestRuns();
-  const requested = (await searchParams).run;
-  const active = runs.find((run) => run.id === requested) ?? runs[0];
+  const active = runs[0];
   const combined = active
     ? active.accounts
         .flatMap((account) =>
@@ -144,7 +142,7 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
           <span className="brand-name">Inbox Daily</span>
         </div>
         <div className="topbar-meta">
-          <span>每天 08:00 · 20:00</span>
+          <span>每小時整點整理</span>
           {user && <a href={chatGPTSignOutPath("/")}>登出</a>}
         </div>
       </header>
@@ -169,14 +167,6 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
               <div><strong>{active.accounts.reduce((sum, item) => sum + item.aiSuggestions.length, 0)}</strong><span>AI 重點</span></div>
             </div>
           </section>
-
-          <nav className="timeline" aria-label="歷史摘要">
-            {runs.map((run) => (
-              <a key={run.id} className={run.id === active.id ? "active" : ""} href={`/?run=${encodeURIComponent(run.id)}`}>
-                {formatTime(run.createdAt)}
-              </a>
-            ))}
-          </nav>
 
           <section className="combined-overview" aria-labelledby="combined-title">
             <div className="section-heading">

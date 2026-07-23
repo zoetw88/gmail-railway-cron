@@ -35,6 +35,8 @@ test("source keeps data minimization and server-side authorization explicit", as
   assert.match(page, /account-chip/);
   assert.match(page, /urgent\.slice\(0, 12\)/);
   assert.match(page, /general\.slice\(0, 16\)/);
+  assert.doesNotMatch(page, /className="timeline"/);
+  assert.match(page, /每小時整點整理/);
   assert.match(route, /threadId/);
   assert.match(route, /priority/);
   assert.match(route, /aiLabelsApplied/);

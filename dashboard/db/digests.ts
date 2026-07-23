@@ -49,7 +49,7 @@ export async function getDigestRuns(): Promise<DigestRun[]> {
   if (!db) return [];
   await initializeDatabase(db);
   const result = await db
-    .prepare("SELECT payload_json FROM digest_runs ORDER BY created_at DESC LIMIT 60")
+    .prepare("SELECT payload_json FROM digest_runs ORDER BY created_at DESC LIMIT 1")
     .all<{ payload_json: string }>();
   return result.results.map((row) => JSON.parse(row.payload_json) as DigestRun);
 }

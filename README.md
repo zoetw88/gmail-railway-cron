@@ -2,7 +2,9 @@
 
 [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/gmail-ai-daily-organizer)
 
-每天由 Railway Cron 啟動，依序整理多個 Gmail 帳號、貼標籤、封存明確促銷信，寄出摘要後退出。可選用 OpenRouter 或 GLM 分類未匹配郵件，並把每日摘要推送到 LINE。規則採 first-match：同一封信只會套用第一個匹配規則。
+每小時由 Railway Cron 啟動，依序整理多個 Gmail 帳號、貼標籤、封存明確促銷信，寄出摘要後退出。可選用 OpenRouter 或 GLM 分類未匹配郵件，並把摘要推送到私人儀表板。規則採 first-match：同一封信只會套用第一個匹配規則。
+
+啟用 LINE 時，摘要會先列緊急郵件，再列重要與一般郵件。成功推送後，郵件會加上 `Inbox Daily/已推送 LINE` 標籤，後續排程會排除它，避免重複通知。
 
 ## 安全預設
 
