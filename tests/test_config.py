@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from gmail_cron.config import ai_settings, email_summary_enabled, line_settings, load_accounts
+from gmail_cron.config import ai_settings, dashboard_settings, email_summary_enabled, line_settings, load_accounts
 
 
 def test_load_accounts(monkeypatch):
@@ -52,3 +52,14 @@ def test_line_user_id_is_validated(monkeypatch):
 def test_email_summary_can_be_disabled(monkeypatch):
     monkeypatch.setenv("EMAIL_SUMMARY_ENABLED", "false")
     assert email_summary_enabled() is False
+
+
+def test_dashboard_requires_https_and_token(monkeypatch):
+    monkeypatch.setenv("DASHBOARD_ENABLED", "true")
+    monkeypatch.setenv("DASHBOARD_URL", "http://example.test")
+    with pytest.raises(ValueError, match="https"):
+        dashboard_settings()
+
+    monkeypatch.setenv("DASHBOARD_URL", "https://example.test/")
+    monkeypatch.setenv("DASHBOARD_INGEST_TOKEN", "secret")
+    assert dashboard_settings().url == "https://example.test"

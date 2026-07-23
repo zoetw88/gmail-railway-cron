@@ -38,6 +38,12 @@ class LineSettings:
     user_id: str
 
 
+@dataclass(frozen=True)
+class DashboardSettings:
+    url: str
+    ingest_token: str
+
+
 def load_accounts() -> list[Account]:
     raw = os.environ.get("GMAIL_ACCOUNTS_JSON")
     if not raw:
@@ -98,3 +104,13 @@ def line_settings() -> LineSettings | None:
     if not user_id.startswith("U") or len(user_id) != 33:
         raise ValueError("LINE_USER_ID must look like U followed by 32 characters")
     return LineSettings(channel_access_token=token, user_id=user_id)
+
+
+def dashboard_settings() -> DashboardSettings | None:
+    if os.environ.get("DASHBOARD_ENABLED", "false").lower() not in {"1", "true", "yes"}:
+        return None
+    url = os.environ.get("DASHBOARD_URL", "").rstrip("/")
+    token = os.environ.get("DASHBOARD_INGEST_TOKEN", "")
+    if not url.startswith("https://") or not token:
+        raise ValueError("DASHBOARD_URL (https) and DASHBOARD_INGEST_TOKEN are required")
+    return DashboardSettings(url=url, ingest_token=token)

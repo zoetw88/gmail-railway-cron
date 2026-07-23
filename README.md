@@ -65,6 +65,18 @@ LINE Notify 已終止，本專案使用 LINE Messaging API。建立 LINE Officia
 
 摘要會在所有 Gmail 帳號成功處理後推送。LINE 設定錯誤會讓該次 job 以失敗結束，方便從 Railway logs 發現。
 
+## 選用私人雲端儀表板
+
+`dashboard/` 是可獨立部署的 Inbox Daily 網站，使用 ChatGPT 登入保護頁面，並以 D1 保存最近 30 天摘要。Railway 只會上傳帳號地址、分類數量、封存數量、AI 類別與短摘要；不會上傳郵件本文、snippet、Gmail message id 或 OAuth 憑證。
+
+Railway Variables：
+
+- `DASHBOARD_ENABLED=true`
+- `DASHBOARD_URL=https://你的網站網址`
+- `DASHBOARD_INGEST_TOKEN`（與網站端 `INGEST_TOKEN` 相同的隨機密鑰）
+
+網站端另需設定 `ALLOWED_VIEWER_EMAILS`，以逗號分隔允許登入的 Email。若以儀表板取代 LINE，可將 `LINE_ENABLED=false`。
+
 ## 資料與隱私
 
 - Gmail：程式透過 Google OAuth 讀取郵件中繼資料、貼標籤、封存及寄摘要；不刪信。

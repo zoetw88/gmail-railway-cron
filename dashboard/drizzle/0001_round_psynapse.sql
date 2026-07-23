@@ -1,0 +1,1 @@
+CREATE INDEX `digest_runs_created_at_idx` ON `digest_runs` (`created_at`);
