@@ -16,6 +16,7 @@ class EmailPreview:
     sender: str
     subject: str
     snippet: str
+    thread_id: str = ""
 
 
 @dataclass(frozen=True)
@@ -24,6 +25,8 @@ class AiSuggestion:
     category: str
     confidence: float
     summary: str
+    subject: str = ""
+    thread_id: str = ""
 
 
 def _post_json(url: str, headers: dict[str, str], body: bytes) -> dict:
@@ -67,7 +70,8 @@ class GlmClassifier:
         )
         content = response["choices"][0]["message"]["content"]
         values = json.loads(content).get("results", [])
-        allowed_ids = {preview.message_id for preview in previews}
+        preview_by_id = {preview.message_id: preview for preview in previews}
+        allowed_ids = set(preview_by_id)
         suggestions: list[AiSuggestion] = []
         seen: set[str] = set()
         for value in values:
@@ -78,5 +82,15 @@ class GlmClassifier:
             if message_id not in allowed_ids or message_id in seen or category not in CATEGORIES or not 0 <= confidence <= 1:
                 continue
             seen.add(message_id)
-            suggestions.append(AiSuggestion(message_id, category, confidence, summary))
+            preview = preview_by_id[message_id]
+            suggestions.append(
+                AiSuggestion(
+                    message_id,
+                    category,
+                    confidence,
+                    summary,
+                    preview.subject[:300],
+                    preview.thread_id or message_id,
+                )
+            )
         return suggestions

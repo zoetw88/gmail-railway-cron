@@ -6,14 +6,23 @@ from gmail_cron.dashboard import publish_dashboard
 from gmail_cron.organizer import Result
 
 
-def test_dashboard_publish_excludes_message_ids_and_confidence():
+def test_dashboard_publish_includes_safe_gmail_link_data_but_excludes_confidence():
     captured = {}
     account = Account("A", "a@example.com", "client", "secret", "refresh")
     result = Result(
         account="A",
         matched={"Security": 2},
         archived=1,
-        ai_suggestions=[AiSuggestion("private-message-id", "Security", 0.98, "需要檢查登入")],
+        ai_suggestions=[
+            AiSuggestion(
+                "private-message-id",
+                "Security",
+                0.98,
+                "需要檢查登入",
+                "新的登入活動",
+                "thread-123",
+            )
+        ],
     )
 
     def post(url, headers, body):
@@ -31,6 +40,9 @@ def test_dashboard_publish_excludes_message_ids_and_confidence():
     assert captured["headers"]["OAI-Sites-Authorization"] == "Bearer access-secret"
     assert captured["headers"]["X-Ingest-Token"] == "ingest-secret"
     serialized = json.dumps(captured["payload"])
-    assert "private-message-id" not in serialized
     assert "0.98" not in serialized
     assert captured["payload"]["accounts"][0]["email"] == "a@example.com"
+    suggestion = captured["payload"]["accounts"][0]["aiSuggestions"][0]
+    assert suggestion["subject"] == "新的登入活動"
+    assert suggestion["threadId"] == "thread-123"
+    assert "private-message-id" not in serialized

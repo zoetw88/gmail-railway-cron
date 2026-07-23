@@ -30,7 +30,12 @@ def dashboard_payload(accounts: list[Account], results: list[Result], dry_run: b
                 "matched": result.matched,
                 "archived": result.archived,
                 "aiSuggestions": [
-                    {"category": suggestion.category, "summary": suggestion.summary}
+                    {
+                        "category": suggestion.category,
+                        "summary": suggestion.summary,
+                        "subject": suggestion.subject,
+                        "threadId": suggestion.thread_id or suggestion.message_id,
+                    }
                     for suggestion in result.ai_suggestions
                 ],
                 "aiError": result.ai_error,

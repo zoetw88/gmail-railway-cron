@@ -67,7 +67,7 @@ LINE Notify 已終止，本專案使用 LINE Messaging API。建立 LINE Officia
 
 ## 選用私人雲端儀表板
 
-`dashboard/` 是可獨立部署的 Inbox Daily 網站，使用 ChatGPT 登入保護頁面，並以 D1 保存最近 30 天摘要。Railway 只會上傳帳號地址、分類數量、封存數量、AI 類別與短摘要；不會上傳郵件本文、snippet、Gmail message id 或 OAuth 憑證。
+`dashboard/` 是可獨立部署的 Inbox Daily 網站，使用 ChatGPT 登入保護頁面，並以 D1 保存最近 30 天摘要。Railway 只會上傳帳號地址、分類數量、封存數量、AI 類別、短摘要、郵件標題與 Gmail thread id，讓使用者可開啟原信；不會上傳寄件者、郵件本文、snippet、OAuth 憑證或 AI 信心分數。
 
 Railway Variables：
 

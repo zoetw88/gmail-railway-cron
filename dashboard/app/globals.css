@@ -102,6 +102,13 @@ a { color: inherit; }
   font-size: 9px; line-height: 1.5;
 }
 .ai-section li p, .quiet { margin: 0; color: #3f4b45; font-size: 12px; line-height: 1.55; }
+.mail-link {
+  display: inline-block; max-width: 100%; margin-bottom: 4px; overflow: hidden;
+  color: var(--green); font-size: 12px; font-weight: 700; text-overflow: ellipsis;
+  text-decoration-thickness: 1px; text-underline-offset: 3px; white-space: nowrap;
+}
+.mail-link:hover { color: #0d3628; }
+.mail-link:focus-visible { outline: 2px solid var(--green); outline-offset: 3px; border-radius: 3px; }
 .quiet { color: var(--muted); }
 
 .empty-state { padding: 18vh 0; max-width: 700px; }

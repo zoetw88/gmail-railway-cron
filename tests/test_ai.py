@@ -21,10 +21,12 @@ def test_glm_classifier_sends_limited_preview_and_validates_output():
         }
         return {"choices": [{"message": {"content": json.dumps(content)}}]}
 
-    preview = EmailPreview("m1", "sender@example.com", "Subject", "x" * 800)
+    preview = EmailPreview("m1", "sender@example.com", "Subject", "x" * 800, "thread-1")
     result = GlmClassifier(SETTINGS, post_json=post).classify([preview])
 
     assert result[0].category == "Security"
+    assert result[0].subject == "Subject"
+    assert result[0].thread_id == "thread-1"
     assert len(result) == 1
     assert captured["url"] == "https://example.test/v4/chat/completions"
     prompt = captured["payload"]["messages"][1]["content"]

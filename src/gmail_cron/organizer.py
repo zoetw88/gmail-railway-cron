@@ -69,7 +69,13 @@ def _message_preview(service, message_id: str) -> EmailPreview:
         userId="me", id=message_id, format="metadata", metadataHeaders=["From", "Subject"]
     ).execute()
     headers = {item["name"].lower(): item["value"] for item in message.get("payload", {}).get("headers", [])}
-    return EmailPreview(message_id, headers.get("from", ""), headers.get("subject", ""), message.get("snippet", ""))
+    return EmailPreview(
+        message_id,
+        headers.get("from", ""),
+        headers.get("subject", ""),
+        message.get("snippet", ""),
+        message.get("threadId", message_id),
+    )
 
 
 def organize_account(

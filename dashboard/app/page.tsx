@@ -23,6 +23,10 @@ function totalMatched(run: DigestRun) {
   );
 }
 
+function gmailThreadUrl(email: string, threadId: string) {
+  return `https://mail.google.com/mail/u/?authuser=${encodeURIComponent(email)}#all/${encodeURIComponent(threadId)}`;
+}
+
 function authorized(email: string) {
   const configured = process.env.ALLOWED_VIEWER_EMAILS ?? "";
   return configured
@@ -131,7 +135,20 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
                   {account.aiSuggestions.length ? (
                     <ol>
                       {account.aiSuggestions.slice(0, 5).map((item, index) => (
-                        <li key={`${item.category}-${index}`}><span>{item.category}</span><p>{item.summary}</p></li>
+                        <li key={`${item.threadId}-${index}`}>
+                          <span>{item.category}</span>
+                          <div>
+                            <a
+                              className="mail-link"
+                              href={gmailThreadUrl(account.email, item.threadId)}
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              {item.subject || "開啟這封郵件"} ↗
+                            </a>
+                            <p>{item.summary}</p>
+                          </div>
+                        </li>
                       ))}
                     </ol>
                   ) : (
@@ -144,7 +161,7 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
         </>
       )}
 
-      <footer>只保存分類統計與 AI 短摘要 · 30 天後自動刪除 · 不保存郵件全文</footer>
+      <footer>保存分類統計、郵件標題、Gmail 連結與 AI 短摘要 · 30 天後自動刪除 · 不保存郵件全文</footer>
     </main>
   );
 }

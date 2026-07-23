@@ -1,6 +1,11 @@
 import { env } from "cloudflare:workers";
 
-export type AiSummary = { category: string; summary: string };
+export type AiSummary = {
+  category: string;
+  summary: string;
+  subject: string;
+  threadId: string;
+};
 export type AccountDigest = {
   name: string;
   email: string;

@@ -25,5 +25,9 @@ test("source keeps data minimization and server-side authorization explicit", as
   assert.match(page, /30 天後自動刪除/);
   assert.match(route, /request\.headers\.get\("x-ingest-token"\)/);
   assert.match(route, /DELETE FROM digest_runs/);
-  assert.doesNotMatch(publisher, /message_id|confidence/);
+  assert.match(page, /mail-link/);
+  assert.match(page, /mail\.google\.com/);
+  assert.match(route, /threadId/);
+  assert.match(publisher, /threadId/);
+  assert.doesNotMatch(publisher, /confidence/);
 });

@@ -16,7 +16,10 @@ function validAccount(value: unknown): value is AccountDigest {
     Array.isArray(item.aiSuggestions) && item.aiSuggestions.length <= MAX_SUGGESTIONS &&
     item.aiSuggestions.every((suggestion) =>
       typeof suggestion?.category === "string" && suggestion.category.length <= 40 &&
-      typeof suggestion?.summary === "string" && suggestion.summary.length <= 160
+      typeof suggestion?.summary === "string" && suggestion.summary.length <= 160 &&
+      typeof suggestion?.subject === "string" && suggestion.subject.length <= 300 &&
+      typeof suggestion?.threadId === "string" &&
+      /^[A-Za-z0-9_-]{1,128}$/.test(suggestion.threadId)
     ) &&
     (item.aiError === null || typeof item.aiError === "string")
   );
