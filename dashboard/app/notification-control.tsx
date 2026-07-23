@@ -11,7 +11,7 @@ function base64UrlToUint8Array(value: string) {
 }
 
 async function currentSubscription() {
-  const registration = await navigator.serviceWorker.ready;
+  const registration = await navigator.serviceWorker.register("/sw.js");
   return registration.pushManager.getSubscription();
 }
 
@@ -24,9 +24,7 @@ export function NotificationControl() {
       setState("unsupported");
       return;
     }
-    navigator.serviceWorker
-      .register("/sw.js")
-      .then(currentSubscription)
+    currentSubscription()
       .then((subscription) => {
         if (Notification.permission === "denied") setState("blocked");
         else setState(subscription ? "on" : "off");
@@ -46,7 +44,7 @@ export function NotificationControl() {
       const keyResponse = await fetch("/api/push/key", { cache: "no-store" });
       if (!keyResponse.ok) throw new Error("key unavailable");
       const { publicKey } = (await keyResponse.json()) as { publicKey: string };
-      const registration = await navigator.serviceWorker.ready;
+      const registration = await navigator.serviceWorker.register("/sw.js");
       const subscription =
         (await registration.pushManager.getSubscription()) ??
         (await registration.pushManager.subscribe({
@@ -127,4 +125,3 @@ export function NotificationControl() {
     </section>
   );
 }
-
