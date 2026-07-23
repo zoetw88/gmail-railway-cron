@@ -3,17 +3,27 @@ from __future__ import annotations
 import json
 from datetime import datetime, timezone
 from typing import Callable
+from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
 from .config import Account, DashboardSettings
 from .organizer import Result
 
 
+class DashboardPublishError(RuntimeError):
+    def __init__(self, status: int):
+        super().__init__(f"dashboard publish failed with HTTP {status}")
+        self.status = status
+
+
 def _post(url: str, headers: dict[str, str], body: bytes) -> None:
     request = Request(url, data=body, headers=headers, method="POST")
-    with urlopen(request, timeout=20) as response:
-        if response.status != 201:
-            raise RuntimeError(f"dashboard publish failed with HTTP {response.status}")
+    try:
+        with urlopen(request, timeout=20) as response:
+            if response.status != 201:
+                raise DashboardPublishError(response.status)
+    except HTTPError as exc:
+        raise DashboardPublishError(exc.code) from exc
 
 
 def dashboard_payload(accounts: list[Account], results: list[Result], dry_run: bool) -> dict:
@@ -52,12 +62,21 @@ def publish_dashboard(
     dry_run: bool,
     post: Callable = _post,
 ) -> None:
-    post(
-        f"{settings.url}/api/digests",
-        {
-            "OAI-Sites-Authorization": f"Bearer {settings.access_token}",
-            "X-Ingest-Token": settings.ingest_token,
-            "Content-Type": "application/json",
-        },
-        json.dumps(dashboard_payload(accounts, results, dry_run), ensure_ascii=False).encode(),
-    )
+    url = f"{settings.url}/api/digests"
+    headers = {
+        "OAI-Sites-Authorization": f"Bearer {settings.access_token}",
+        "X-Ingest-Token": settings.ingest_token,
+        "Content-Type": "application/json",
+    }
+    payload = dashboard_payload(accounts, results, dry_run)
+    try:
+        post(url, headers, json.dumps(payload, ensure_ascii=False).encode())
+    except DashboardPublishError as exc:
+        if exc.status != 400:
+            raise
+        legacy_payload = json.loads(json.dumps(payload))
+        for account in legacy_payload["accounts"]:
+            for suggestion in account["aiSuggestions"]:
+                suggestion.pop("subject", None)
+                suggestion.pop("threadId", None)
+        post(url, headers, json.dumps(legacy_payload, ensure_ascii=False).encode())
