@@ -30,6 +30,11 @@ test("source keeps data minimization and server-side authorization explicit", as
   assert.match(page, /AI 緊急重點/);
   assert.match(page, /priority-\$\{priority\}/);
   assert.match(page, /category-badge/);
+  assert.match(page, /combined-overview/);
+  assert.match(page, /priority-columns/);
+  assert.match(page, /account-chip/);
+  assert.match(page, /urgent\.slice\(0, 12\)/);
+  assert.match(page, /general\.slice\(0, 16\)/);
   assert.match(route, /threadId/);
   assert.match(route, /priority/);
   assert.match(route, /aiLabelsApplied/);

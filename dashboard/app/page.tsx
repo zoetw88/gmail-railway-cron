@@ -4,6 +4,10 @@ import { getDigestRuns, type DigestRun } from "@/db/digests";
 export const dynamic = "force-dynamic";
 
 type SearchParams = Promise<{ run?: string }>;
+type CombinedSuggestion = DigestRun["accounts"][number]["aiSuggestions"][number] & {
+  accountName: string;
+  accountEmail: string;
+};
 
 function formatTime(value: string) {
   return new Intl.DateTimeFormat("zh-TW", {
@@ -29,9 +33,47 @@ function gmailThreadUrl(email: string, threadId: string) {
 
 const priorityOrder = { urgent: 0, important: 1, normal: 2 } as const;
 const priorityLabel = { urgent: "緊急", important: "重要", normal: "一般" } as const;
+const categoryLabel: Record<string, string> = {
+  Security: "安全",
+  Billing: "財務",
+  "Job Alerts": "求職",
+  Reading: "閱讀",
+  Courses: "課程",
+  Promotions: "促銷",
+  Other: "其他",
+};
 
 function normalizedPriority(value: string | undefined): keyof typeof priorityOrder {
   return value === "urgent" || value === "important" ? value : "normal";
+}
+
+function HighlightList({ items, empty }: { items: CombinedSuggestion[]; empty: string }) {
+  if (!items.length) return <p className="highlight-empty">{empty}</p>;
+  return (
+    <ol className="highlight-list">
+      {items.map((item, index) => {
+        const priority = normalizedPriority(item.priority);
+        return (
+          <li key={`${item.accountEmail}-${item.threadId}-${index}`}>
+            <div className="highlight-meta">
+              <span className={`priority priority-${priority}`}>{priorityLabel[priority]}</span>
+              <span className="account-chip">Gmail {item.accountName}</span>
+              <span className="category-badge">{categoryLabel[item.category] ?? item.category}</span>
+            </div>
+            <a
+              className="highlight-link"
+              href={gmailThreadUrl(item.accountEmail, item.threadId)}
+              target="_blank"
+              rel="noreferrer"
+            >
+              {item.subject || "開啟這封郵件"} ↗
+            </a>
+            <p>{item.summary}</p>
+          </li>
+        );
+      })}
+    </ol>
+  );
 }
 
 function authorized(email: string) {
@@ -76,6 +118,23 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
   const runs = await getDigestRuns();
   const requested = (await searchParams).run;
   const active = runs.find((run) => run.id === requested) ?? runs[0];
+  const combined = active
+    ? active.accounts
+        .flatMap((account) =>
+          account.aiSuggestions.map((item) => ({
+            ...item,
+            accountName: account.name,
+            accountEmail: account.email,
+          })),
+        )
+        .sort(
+          (left, right) =>
+            priorityOrder[normalizedPriority(left.priority)] -
+            priorityOrder[normalizedPriority(right.priority)],
+        )
+    : [];
+  const urgent = combined.filter((item) => normalizedPriority(item.priority) === "urgent");
+  const general = combined.filter((item) => normalizedPriority(item.priority) !== "urgent");
 
   return (
     <main className="shell">
@@ -119,9 +178,35 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
             ))}
           </nav>
 
+          <section className="combined-overview" aria-labelledby="combined-title">
+            <div className="section-heading">
+              <div>
+                <span className="eyebrow">ALL MAILBOXES</span>
+                <h2 id="combined-title">四個信箱，一次看完</h2>
+              </div>
+              <p>緊急信優先；每封都標示來源信箱與分類。</p>
+            </div>
+            <div className="priority-columns">
+              <article className="priority-panel urgent-panel">
+                <header>
+                  <div><span className="signal-dot" />需要先處理</div>
+                  <strong>{urgent.length}</strong>
+                </header>
+                <HighlightList items={urgent.slice(0, 12)} empty="目前沒有緊急郵件。" />
+              </article>
+              <article className="priority-panel general-panel">
+                <header>
+                  <div>重要與一般</div>
+                  <strong>{general.length}</strong>
+                </header>
+                <HighlightList items={general.slice(0, 16)} empty="這次沒有其他摘要。" />
+              </article>
+            </div>
+          </section>
+
           <section className="account-grid">
             {active.accounts.map((account) => (
-              <article className="account-card" key={account.email}>
+              <article className="account-card compact-account" key={account.email}>
                 <header>
                   <div className="account-letter">{account.name}</div>
                   <div><h2>{account.email}</h2><p>Gmail {account.name}</p></div>

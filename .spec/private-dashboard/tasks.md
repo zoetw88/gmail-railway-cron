@@ -11,3 +11,4 @@
 - [x] End-to-end smoke verifies Railway ingestion and authenticated dashboard rendering.
 - [x] AI highlights are ordered by urgency and show separate, visually distinct urgency and category labels.
 - [x] AI may apply category labels only when explicitly enabled and confidence is at least 0.90; it never archives, deletes, or replies.
+- [x] The latest digest combines all four mailboxes into one urgency-first overview while preserving account identity and Gmail links.
