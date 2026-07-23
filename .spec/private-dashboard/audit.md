@@ -14,3 +14,9 @@
 - Ingestion requires a separate bearer secret and validates payload shape and size.
 - Secrets remain hosted environment variables and are never committed.
 - The deployment must remain gated at the application layer if platform access is public for machine ingestion.
+
+## Verification
+
+- 2026-07-23: Railway production variables were present and the deployed source matched commit `0f8473b`.
+- 2026-07-23: A production-configured manual run completed all four Gmail accounts and published the digest.
+- 2026-07-23: The authenticated production dashboard rendered four account cards, 27 classifications, 5 archived messages, and 35 AI highlights.
