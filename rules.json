@@ -1,8 +1,7 @@
 [
-  {"label":"Security","query":"from:(accounts.google.com OR github.com)"},
-  {"label":"Billing","query":"from:(paypal.com OR stripe.com)"},
-  {"label":"Job Alerts","query":"from:(linkedin.com OR 104.com.tw OR cakeresume.com)"},
-  {"label":"Reading","query":"from:(substack.com)"},
-  {"label":"Promotions","query":"category:promotions","archive":true}
+  {"label":"安全/安全通知","query":"from:(accounts.google.com OR github.com)"},
+  {"label":"財務/帳務","query":"from:(paypal.com OR stripe.com)"},
+  {"label":"工作/求職","query":"from:(linkedin.com OR 104.com.tw OR cakeresume.com)"},
+  {"label":"閱讀/一般","query":"from:(substack.com)"},
+  {"label":"購物/促銷","query":"category:promotions","archive":true}
 ]
-

@@ -16,6 +16,15 @@ SCOPES = [
     "https://www.googleapis.com/auth/gmail.send",
 ]
 
+AI_LABEL_NAMES = {
+    "Security": "安全/安全通知",
+    "Billing": "財務/帳務",
+    "Job Alerts": "工作/求職",
+    "Reading": "閱讀/一般",
+    "Courses": "學習/課程",
+    "Promotions": "購物/促銷",
+}
+
 
 @dataclass
 class Result:
@@ -123,7 +132,8 @@ def organize_account(
             for suggestion in result.ai_suggestions:
                 if suggestion.confidence < ai.confidence_threshold or suggestion.category == "Other":
                     continue
-                label_id = ensure_label(service, suggestion.category, labels, dry_run=False)
+                label_name = AI_LABEL_NAMES[suggestion.category]
+                label_id = ensure_label(service, label_name, labels, dry_run=False)
                 service.users().messages().modify(
                     userId="me", id=suggestion.message_id, body={"addLabelIds": [label_id]}
                 ).execute()

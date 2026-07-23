@@ -9,7 +9,11 @@ class Call:
 
 
 class Labels:
-    def list(self, **kwargs): return Call({"labels": [{"name": "Security", "id": "L1"}]})
+    def list(self, **kwargs):
+        return Call({"labels": [
+            {"name": "Security", "id": "L1"},
+            {"name": "安全/安全通知", "id": "L2"},
+        ]})
 
 
 class Messages:
@@ -84,7 +88,7 @@ def test_high_confidence_ai_category_is_labeled_when_enabled():
 
     assert result.ai_labels_applied == 1
     assert service.user_api.message_api.single_modified == [
-        {"userId": "me", "id": "m2", "body": {"addLabelIds": ["L1"]}}
+        {"userId": "me", "id": "m2", "body": {"addLabelIds": ["L2"]}}
     ]
 
 
