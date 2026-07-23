@@ -5,12 +5,14 @@ export type AiSummary = {
   summary: string;
   subject: string;
   threadId: string;
+  priority: "urgent" | "important" | "normal";
 };
 export type AccountDigest = {
   name: string;
   email: string;
   matched: Record<string, number>;
   archived: number;
+  aiLabelsApplied: number;
   aiSuggestions: AiSummary[];
   aiError: string | null;
 };

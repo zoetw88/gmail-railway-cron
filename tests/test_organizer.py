@@ -70,6 +70,24 @@ def test_ai_only_receives_unmatched_messages_and_does_not_archive():
     assert service.user_api.message_api.single_modified == []
 
 
+def test_high_confidence_ai_category_is_labeled_when_enabled():
+    class Classifier:
+        def classify(self, previews):
+            return [AiSuggestion("m2", "Security", 0.99, "需要處理", priority="urgent")]
+
+    service = Service()
+    ai = AiSettings("secret", "https://example.test", "glm", 0.9, 20, True)
+
+    result = organize_account(
+        service, ACCOUNT, [Rule("Security", "from:google.com")], "1d", False, ai=ai, classifier=Classifier()
+    )
+
+    assert result.ai_labels_applied == 1
+    assert service.user_api.message_api.single_modified == [
+        {"userId": "me", "id": "m2", "body": {"addLabelIds": ["L1"]}}
+    ]
+
+
 def test_line_summary_can_include_email_without_changing_default_log_summary():
     result = Result(account="A", matched={"Security": 2})
 

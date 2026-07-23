@@ -94,12 +94,21 @@ a { color: inherit; }
 
 .ai-section { padding-top: 18px; }
 .ai-section h3 { margin: 0 0 12px; font-size: 12px; letter-spacing: .04em; text-transform: uppercase; }
+.ai-section h3 small { margin-left: 10px; color: var(--green); font-size: 10px; font-weight: 650; letter-spacing: 0; text-transform: none; }
 .ai-section ol { list-style: none; margin: 0; padding: 0; }
 .ai-section li { display: grid; grid-template-columns: auto 1fr; gap: 9px; padding: 9px 0; }
 .ai-section li + li { border-top: 1px dashed var(--line); }
-.ai-section li span {
+.badge-stack { display: flex; flex-wrap: wrap; gap: 5px; align-items: flex-start; }
+.ai-section li .priority,
+.ai-section li .category-badge {
   align-self: start; padding: 3px 7px; border-radius: 6px; background: var(--ink); color: white;
   font-size: 9px; line-height: 1.5;
+}
+.ai-section li .priority-urgent { background: #9d2f2f; }
+.ai-section li .priority-important { background: var(--amber); }
+.ai-section li .priority-normal { background: var(--ink); }
+.ai-section li .category-badge {
+  border: 1px solid #cbd9cf; background: #eef4ef; color: var(--green); font-weight: 700;
 }
 .ai-section li p, .quiet { margin: 0; color: #3f4b45; font-size: 12px; line-height: 1.55; }
 .mail-link {

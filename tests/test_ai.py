@@ -14,7 +14,13 @@ def test_glm_classifier_sends_limited_preview_and_validates_output():
         captured.update(url=url, headers=headers, payload=json.loads(body))
         content = {
             "results": [
-                {"id": "m1", "category": "Security", "confidence": 0.98, "summary": "需要檢查登入"},
+                {
+                    "id": "m1",
+                    "category": "Security",
+                    "confidence": 0.98,
+                    "priority": "urgent",
+                    "summary": "需要檢查登入",
+                },
                 {"id": "invented", "category": "Billing", "confidence": 1, "summary": "忽略"},
                 {"id": "m1", "category": "Other", "confidence": 1, "summary": "重複"},
             ]
@@ -27,6 +33,7 @@ def test_glm_classifier_sends_limited_preview_and_validates_output():
     assert result[0].category == "Security"
     assert result[0].subject == "Subject"
     assert result[0].thread_id == "thread-1"
+    assert result[0].priority == "urgent"
     assert len(result) == 1
     assert captured["url"] == "https://example.test/v4/chat/completions"
     prompt = captured["payload"]["messages"][1]["content"]
@@ -43,3 +50,16 @@ def test_glm_classifier_skips_invalid_category_and_confidence():
     post = lambda *_: {"choices": [{"message": {"content": json.dumps(content)}}]}
     previews = [EmailPreview("m1", "", "", ""), EmailPreview("m2", "", "", "")]
     assert GlmClassifier(SETTINGS, post_json=post).classify(previews) == []
+
+
+def test_glm_classifier_orders_urgent_before_normal():
+    content = {"results": [
+        {"id": "m1", "category": "Reading", "confidence": 0.95, "priority": "normal", "summary": "一般"},
+        {"id": "m2", "category": "Billing", "confidence": 0.96, "priority": "urgent", "summary": "緊急"},
+    ]}
+    post = lambda *_: {"choices": [{"message": {"content": json.dumps(content)}}]}
+    previews = [EmailPreview("m1", "", "", ""), EmailPreview("m2", "", "", "")]
+
+    result = GlmClassifier(SETTINGS, post_json=post).classify(previews)
+
+    assert [item.message_id for item in result] == ["m2", "m1"]

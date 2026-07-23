@@ -45,6 +45,8 @@ def test_dashboard_publish_includes_safe_gmail_link_data_but_excludes_confidence
     suggestion = captured["payload"]["accounts"][0]["aiSuggestions"][0]
     assert suggestion["subject"] == "新的登入活動"
     assert suggestion["threadId"] == "thread-123"
+    assert suggestion["priority"] == "normal"
+    assert captured["payload"]["accounts"][0]["aiLabelsApplied"] == 0
     assert "private-message-id" not in serialized
 
 
@@ -74,3 +76,4 @@ def test_dashboard_publish_retries_legacy_payload_when_old_site_rejects_link_fie
         "category": "Security",
         "summary": "摘要",
     }
+    assert "aiLabelsApplied" not in bodies[1]["accounts"][0]

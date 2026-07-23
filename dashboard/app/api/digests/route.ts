@@ -12,6 +12,7 @@ function validAccount(value: unknown): value is AccountDigest {
     typeof item.name === "string" && item.name.length <= 20 &&
     typeof item.email === "string" && item.email.length <= 254 &&
     typeof item.archived === "number" && item.archived >= 0 &&
+    typeof item.aiLabelsApplied === "number" && item.aiLabelsApplied >= 0 &&
     !!item.matched && typeof item.matched === "object" &&
     Array.isArray(item.aiSuggestions) && item.aiSuggestions.length <= MAX_SUGGESTIONS &&
     item.aiSuggestions.every((suggestion) =>
@@ -19,7 +20,8 @@ function validAccount(value: unknown): value is AccountDigest {
       typeof suggestion?.summary === "string" && suggestion.summary.length <= 160 &&
       typeof suggestion?.subject === "string" && suggestion.subject.length <= 300 &&
       typeof suggestion?.threadId === "string" &&
-      /^[A-Za-z0-9_-]{1,128}$/.test(suggestion.threadId)
+      /^[A-Za-z0-9_-]{1,128}$/.test(suggestion.threadId) &&
+      ["urgent", "important", "normal"].includes(suggestion.priority)
     ) &&
     (item.aiError === null || typeof item.aiError === "string")
   );

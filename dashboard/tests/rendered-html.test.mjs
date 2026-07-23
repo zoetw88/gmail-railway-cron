@@ -27,7 +27,12 @@ test("source keeps data minimization and server-side authorization explicit", as
   assert.match(route, /DELETE FROM digest_runs/);
   assert.match(page, /mail-link/);
   assert.match(page, /mail\.google\.com/);
+  assert.match(page, /AI 緊急重點/);
+  assert.match(page, /priority-\$\{priority\}/);
+  assert.match(page, /category-badge/);
   assert.match(route, /threadId/);
+  assert.match(route, /priority/);
+  assert.match(route, /aiLabelsApplied/);
   assert.match(publisher, /threadId/);
   assert.doesNotMatch(publisher, /confidence/);
 });

@@ -27,6 +27,13 @@ function gmailThreadUrl(email: string, threadId: string) {
   return `https://mail.google.com/mail/u/?authuser=${encodeURIComponent(email)}#all/${encodeURIComponent(threadId)}`;
 }
 
+const priorityOrder = { urgent: 0, important: 1, normal: 2 } as const;
+const priorityLabel = { urgent: "緊急", important: "重要", normal: "一般" } as const;
+
+function normalizedPriority(value: string | undefined): keyof typeof priorityOrder {
+  return value === "urgent" || value === "important" ? value : "normal";
+}
+
 function authorized(email: string) {
   const configured = process.env.ALLOWED_VIEWER_EMAILS ?? "";
   return configured
@@ -131,12 +138,29 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
                 <div className="archive-line"><span>本次封存</span><strong>{account.archived} 封</strong></div>
 
                 <div className="ai-section">
-                  <h3>AI 重點</h3>
+                  <h3>
+                    AI 緊急重點
+                    {account.aiLabelsApplied > 0 && <small>已自動貼標籤 {account.aiLabelsApplied} 封</small>}
+                  </h3>
                   {account.aiSuggestions.length ? (
                     <ol>
-                      {account.aiSuggestions.slice(0, 5).map((item, index) => (
+                      {[...account.aiSuggestions]
+                        .sort(
+                          (left, right) =>
+                            priorityOrder[normalizedPriority(left.priority)] -
+                            priorityOrder[normalizedPriority(right.priority)],
+                        )
+                        .slice(0, 5)
+                        .map((item, index) => {
+                        const priority = normalizedPriority(item.priority);
+                        return (
                         <li key={`${item.threadId}-${index}`}>
-                          <span>{item.category}</span>
+                          <div className="badge-stack">
+                            <span className={`priority priority-${priority}`}>
+                              {priorityLabel[priority]}
+                            </span>
+                            <span className="category-badge">{item.category}</span>
+                          </div>
                           <div>
                             <a
                               className="mail-link"
@@ -149,7 +173,8 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
                             <p>{item.summary}</p>
                           </div>
                         </li>
-                      ))}
+                        );
+                      })}
                     </ol>
                   ) : (
                     <p className="quiet">{account.aiError ? "AI 暫時無法使用，規則整理仍已完成。" : "這次沒有額外重點。"}</p>
@@ -161,7 +186,7 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
         </>
       )}
 
-      <footer>保存分類統計、郵件標題、Gmail 連結與 AI 短摘要 · 30 天後自動刪除 · 不保存郵件全文</footer>
+      <footer>緊急信優先 · 高信心 AI 自動貼標籤 · 30 天後自動刪除 · 不保存郵件全文</footer>
     </main>
   );
 }

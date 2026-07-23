@@ -39,12 +39,14 @@ def dashboard_payload(accounts: list[Account], results: list[Result], dry_run: b
                 "email": account_by_name[result.account].email,
                 "matched": result.matched,
                 "archived": result.archived,
+                "aiLabelsApplied": result.ai_labels_applied,
                 "aiSuggestions": [
                     {
                         "category": suggestion.category,
                         "summary": suggestion.summary,
                         "subject": suggestion.subject,
                         "threadId": suggestion.thread_id or suggestion.message_id,
+                        "priority": suggestion.priority,
                     }
                     for suggestion in result.ai_suggestions
                 ],
@@ -76,7 +78,9 @@ def publish_dashboard(
             raise
         legacy_payload = json.loads(json.dumps(payload))
         for account in legacy_payload["accounts"]:
+            account.pop("aiLabelsApplied", None)
             for suggestion in account["aiSuggestions"]:
                 suggestion.pop("subject", None)
                 suggestion.pop("threadId", None)
+                suggestion.pop("priority", None)
         post(url, headers, json.dumps(legacy_payload, ensure_ascii=False).encode())

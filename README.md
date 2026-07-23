@@ -53,7 +53,7 @@
 - `GLM_MODEL=glm-4.7-flashx`（可自行更換相容模型）
 - `AI_APPLY_LABELS=false`（建議先保持只建議）
 
-如果日後設成 `AI_APPLY_LABELS=true`，只有信心高於 `AI_CONFIDENCE_THRESHOLD` 的分類才會貼標籤；仍不會封存。
+如果設成 `AI_APPLY_LABELS=true`，只有信心高於 `AI_CONFIDENCE_THRESHOLD` 且不是 `Other` 的分類才會貼標籤；仍不會封存、刪除或回覆。AI 摘要另會依 `緊急`、`重要`、`一般` 排序，其中緊急代表可能的帳號風險、付款失敗／即將到期、48 小時內截止或需要立即人工處理。
 
 ## 選用 LINE 摘要
 

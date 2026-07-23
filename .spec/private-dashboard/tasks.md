@@ -9,3 +9,5 @@
 - [x] Stored summaries older than 30 days are deleted during ingestion.
 - [x] Production deployment succeeds with D1 and runtime secrets.
 - [x] End-to-end smoke verifies Railway ingestion and authenticated dashboard rendering.
+- [x] AI highlights are ordered by urgency and show separate, visually distinct urgency and category labels.
+- [x] AI may apply category labels only when explicitly enabled and confidence is at least 0.90; it never archives, deletes, or replies.

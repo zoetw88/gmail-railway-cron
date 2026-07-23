@@ -23,6 +23,7 @@ class Result:
     matched: dict[str, int] = field(default_factory=dict)
     archived: int = 0
     ai_suggestions: list[AiSuggestion] = field(default_factory=list)
+    ai_labels_applied: int = 0
     ai_error: str | None = None
 
 
@@ -126,6 +127,7 @@ def organize_account(
                 service.users().messages().modify(
                     userId="me", id=suggestion.message_id, body={"addLabelIds": [label_id]}
                 ).execute()
+                result.ai_labels_applied += 1
     return result
 
 

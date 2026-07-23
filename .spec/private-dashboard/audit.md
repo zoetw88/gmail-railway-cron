@@ -2,7 +2,7 @@
 
 ## Privacy
 
-- Retained: account email, label counts, archive count, AI category and short summary, Gmail thread id, subject, and run timestamp.
+- Retained: account email, label counts, archive count, AI category, urgency, short summary, Gmail thread id, subject, and run timestamp.
 - Excluded: sender addresses, snippets, bodies, OAuth credentials, AI and LINE keys.
 - Retention: 30 days, enforced on every successful ingestion.
 - Third parties: Railway sends the reduced summary payload to the Sites-hosted endpoint; Sites stores it in D1.
@@ -13,6 +13,7 @@
 - Viewer routes require ChatGPT sign-in and a server-side email allowlist.
 - Ingestion requires a separate bearer secret and validates payload shape and size.
 - Gmail links use the stored account email and validated thread id; they open Gmail directly and do not expose OAuth credentials.
+- AI label writes require an explicit deployment setting, category confidence of at least 0.90, and a non-`Other` category. AI suggestions never archive, delete, or reply.
 - Secrets remain hosted environment variables and are never committed.
 - The deployment must remain gated at the application layer if platform access is public for machine ingestion.
 
