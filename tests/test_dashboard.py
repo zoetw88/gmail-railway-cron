@@ -28,7 +28,7 @@ def test_dashboard_publish_excludes_message_ids_and_confidence():
     )
 
     assert captured["url"] == "https://dashboard.example/api/digests"
-    assert captured["headers"]["Authorization"] == "Bearer access-secret"
+    assert captured["headers"]["OAI-Sites-Authorization"] == "Bearer access-secret"
     assert captured["headers"]["X-Ingest-Token"] == "ingest-secret"
     serialized = json.dumps(captured["payload"])
     assert "private-message-id" not in serialized

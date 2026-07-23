@@ -50,7 +50,7 @@ def publish_dashboard(
     post(
         f"{settings.url}/api/digests",
         {
-            "Authorization": f"Bearer {settings.access_token}",
+            "OAI-Sites-Authorization": f"Bearer {settings.access_token}",
             "X-Ingest-Token": settings.ingest_token,
             "Content-Type": "application/json",
         },
