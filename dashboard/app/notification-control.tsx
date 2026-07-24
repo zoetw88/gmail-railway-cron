@@ -40,6 +40,12 @@ export function NotificationControl() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!message || (state !== "on" && state !== "off")) return;
+    const timer = window.setTimeout(() => setMessage(""), 4_000);
+    return () => window.clearTimeout(timer);
+  }, [message, state]);
+
   async function enable() {
     setState("working");
     setMessage("");
@@ -66,10 +72,10 @@ export function NotificationControl() {
       });
       if (!response.ok) throw new Error("subscription failed");
       setState("on");
-      setMessage("這台裝置會收到緊急郵件通知。");
+      setMessage("這台裝置只會收到緊急郵件通知");
     } catch {
       setState("error");
-      setMessage("通知暫時無法開啟，請稍後重試。");
+      setMessage("通知暫時無法開啟");
     }
   }
 
@@ -79,81 +85,76 @@ export function NotificationControl() {
     try {
       const subscription = await currentSubscription();
       if (subscription) {
-        await fetch("/api/push/subscriptions", {
+        const response = await fetch("/api/push/subscriptions", {
           method: "DELETE",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({ endpoint: subscription.endpoint }),
         });
+        if (!response.ok) throw new Error("unsubscribe failed");
         await subscription.unsubscribe();
       }
       setState("off");
-      setMessage("這台裝置的通知已關閉。");
+      setMessage("這台裝置的通知已關閉");
     } catch {
       setState("error");
-      setMessage("通知暫時無法關閉，請稍後重試。");
+      setMessage("通知暫時無法更新");
     }
   }
 
   const copy =
     state === "on"
-      ? "緊急通知已開啟"
+      ? "緊急通知：開"
       : state === "blocked"
-        ? "通知已被瀏覽器封鎖"
+        ? "通知已封鎖"
         : state === "unsupported"
-          ? "此瀏覽器不支援推播"
+          ? "不支援通知"
           : state === "working"
-            ? "正在更新通知"
+            ? "正在更新"
             : state === "checking"
-              ? "正在確認通知狀態"
+              ? "確認通知"
               : state === "error"
-                ? "通知暫時無法使用"
-                : "緊急通知";
+                ? "重試通知"
+                : "緊急通知：關";
 
   const helper =
     state === "blocked"
-      ? "請到瀏覽器網站設定允許通知。"
+      ? "請到瀏覽器網站設定允許通知"
       : state === "unsupported"
-        ? "iPhone 請先將此頁加入主畫面，再從主畫面開啟。"
-        : message || "只在發現緊急郵件時提醒；一般信不打擾你。";
+        ? "iPhone 請先將此頁加入主畫面"
+        : message || "只提醒緊急郵件";
+  const showHelper = state === "blocked" || state === "unsupported" || state === "error" || Boolean(message);
+  const disabled = state === "checking" || state === "working" || state === "unsupported" || state === "blocked";
+  const notificationAriaLabel =
+    state === "on"
+      ? "關閉緊急通知"
+      : state === "blocked"
+        ? "緊急通知已被瀏覽器封鎖"
+        : state === "unsupported"
+          ? "此瀏覽器不支援緊急通知"
+          : state === "working" || state === "checking"
+            ? "正在確認緊急通知狀態"
+            : state === "error"
+              ? "重試開啟緊急通知"
+              : "開啟緊急通知";
 
   return (
-    <section
-      className={`action-card action-card-secondary notification-${state}`}
-      aria-busy={state === "checking" || state === "working"}
-    >
-      <div className="action-copy">
-        <div className="action-heading">
-          <span className="action-icon notification-bell" aria-hidden="true">
-            <svg viewBox="0 0 24 24">
-              <path d="M18 9.75a6 6 0 0 0-12 0c0 7-2.5 7-2.5 7h17s-2.5 0-2.5-7Z" />
-              <path d="M9.75 20h4.5" />
-            </svg>
-            {state === "on" && <span className="notification-dot" />}
-          </span>
-          <div>
-            <span className="action-kicker">只提醒緊急信</span>
-            <strong>{copy}</strong>
-          </div>
-        </div>
-        <p className="action-status" role="status" aria-live="polite">{helper}</p>
-      </div>
-      {state === "on" ? (
-        <button className="action-button action-button-secondary" type="button" onClick={disable}>
-          關閉通知
-        </button>
-      ) : (
-        <button
-          className="action-button action-button-secondary"
-          type="button"
-          onClick={enable}
-          disabled={state === "checking" || state === "working" || state === "unsupported" || state === "blocked"}
-        >
-          {(state === "checking" || state === "working") && (
-            <span className="button-spinner" aria-hidden="true" />
-          )}
-          {state === "checking" || state === "working" ? "請稍候" : state === "error" ? "再試一次" : "開啟通知"}
-        </button>
-      )}
-    </section>
+    <div className={`notification-control notification-${state}`} aria-busy={state === "checking" || state === "working"}>
+      <button
+        className="notification-toggle"
+        type="button"
+        aria-label={notificationAriaLabel}
+        aria-pressed={state === "on"}
+        onClick={state === "on" ? disable : enable}
+        disabled={disabled}
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M18 9.75a6 6 0 0 0-12 0c0 7-2.5 7-2.5 7h17s-2.5 0-2.5-7Z" />
+          <path d="M9.75 20h4.5" />
+        </svg>
+        <span>{copy}</span>
+        {state === "on" && <span className="notification-dot" aria-hidden="true" />}
+      </button>
+      <span className={showHelper ? "notification-note" : "sr-only"} role="status" aria-live="polite">{helper}</span>
+    </div>
   );
 }

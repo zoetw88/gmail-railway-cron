@@ -14,7 +14,7 @@ type CombinedSuggestion = DigestRun["accounts"][number]["aiSuggestions"][number]
 function formatTime(value: string) {
   return new Intl.DateTimeFormat("zh-TW", {
     timeZone: "Asia/Taipei",
-    month: "short",
+    month: "numeric",
     day: "numeric",
     hour: "2-digit",
     minute: "2-digit",
@@ -78,13 +78,13 @@ function HighlightList({ items, empty }: { items: CombinedSuggestion[]; empty: s
   );
 }
 
-function ActionRail() {
-  return (
-    <section className="action-rail" aria-label="信箱工具">
-      <OrganizeNowControl />
-      <NotificationControl />
-    </section>
-  );
+function accountActivity(account: DigestRun["accounts"][number]) {
+  const matchedCount = Object.values(account.matched).reduce((sum, count) => sum + count, 0);
+  const parts = [];
+  if (matchedCount) parts.push(`${matchedCount} 分類`);
+  if (account.archived) parts.push(`${account.archived} 封存`);
+  if (account.aiSuggestions.length) parts.push(`${account.aiSuggestions.length} 重點`);
+  return parts.length ? parts.join(" · ") : "沒有新內容";
 }
 
 export default async function Home() {
@@ -95,9 +95,9 @@ export default async function Home() {
     return (
       <main className="gate">
         <div className="gate-card">
-          <span className="eyebrow">PRIVATE INBOX JOURNAL</span>
-          <h1>你的信箱，整理成一天兩次的安靜摘要。</h1>
-          <p>登入後查看四個 Gmail 帳號的分類、封存數量與 AI 重點。</p>
+          <span className="gate-label">私人信箱摘要</span>
+          <h1>四個信箱，整理成一頁安靜的重點。</h1>
+          <p>登入後查看緊急郵件、重要提醒與自動整理結果。</p>
           <a className="primary-action" href={chatGPTSignInPath("/")}>使用 ChatGPT 登入</a>
         </div>
       </main>
@@ -108,7 +108,7 @@ export default async function Home() {
     return (
       <main className="gate">
         <div className="gate-card">
-          <span className="eyebrow">ACCESS DENIED</span>
+          <span className="gate-label">無法開啟</span>
           <h1>這個帳號沒有查看權限。</h1>
           <p>{user.email}</p>
           <a className="text-link" href={chatGPTSignOutPath("/")}>改用其他帳號登入</a>
@@ -135,107 +135,132 @@ export default async function Home() {
         )
     : [];
   const urgent = combined.filter((item) => normalizedPriority(item.priority) === "urgent");
-  const general = combined.filter((item) => normalizedPriority(item.priority) !== "urgent");
+  const important = combined.filter((item) => normalizedPriority(item.priority) === "important");
+  const normal = combined.filter((item) => normalizedPriority(item.priority) === "normal");
+  const archived = active?.accounts.reduce((sum, item) => sum + item.archived, 0) ?? 0;
+  const verdictTone = urgent.length ? "urgent" : important.length ? "review" : "calm";
+  const verdict = urgent.length
+    ? `有 ${urgent.length} 封需要現在處理。`
+    : important.length
+      ? `目前沒有急信，今天有 ${important.length} 封值得確認。`
+      : "目前沒有需要處理的信。";
+  const verdictDetail = urgent.length
+    ? "緊急郵件已排在最前面，點擊標題即可開啟 Gmail。"
+    : normal.length
+      ? `${normal.length} 封一般資訊已收好，不需要立即處理。`
+      : "四個信箱都已整理完成。";
+  const latestRunKey = active ? `${active.id}:${active.createdAt}` : "";
 
   return (
     <main className="shell">
       <header className="topbar">
-        <div>
-          <span className="brand-mark">ID</span>
-          <span className="brand-name">Inbox Daily</span>
+        <div className="brand">
+          <span className="brand-mark">Z</span>
+          <span className="brand-name">Zoe Inbox</span>
         </div>
-        <div className="topbar-meta">
-          <span>每小時整點整理</span>
-          {user && <a href={chatGPTSignOutPath("/")}>登出</a>}
+        <div className="topbar-actions">
+          <NotificationControl />
+          {user && <a className="signout-link" href={chatGPTSignOutPath("/")}>登出</a>}
         </div>
       </header>
 
       {!active ? (
-        <>
-          <section className="empty-state">
-            <span className="eyebrow">READY</span>
-            <h1>儀表板已準備好。</h1>
-            <p>下一次 Railway 整理完成後，摘要會自動出現在這裡。</p>
-          </section>
-          <ActionRail />
-        </>
+        <section className="empty-state">
+          <div>
+            <span className="last-run">等待第一份摘要</span>
+            <h1>信箱編輯台已準備好。</h1>
+            <p>現在可以整理四個 Gmail；完成後，值得注意的郵件會出現在這裡。</p>
+          </div>
+          <OrganizeNowControl latestRunKey="" latestRunAt="" />
+        </section>
       ) : (
         <>
-          <section className="hero">
-            <div>
-              <span className="eyebrow">{active.dryRun ? "測試摘要" : "最新整理"}</span>
-              <h1>{formatTime(active.createdAt)}</h1>
-              <p>四個收件匣，收斂成今天真正值得看的內容。</p>
+          <section className={`briefing briefing-${verdictTone}`} aria-labelledby="verdict-title">
+            <div className="briefing-copy">
+              <p className="last-run">
+                最後整理 <time dateTime={active.createdAt}>{formatTime(active.createdAt)}</time>
+                <span aria-hidden="true"> · </span>
+                四個信箱
+                {active.dryRun && <span className="dry-run">測試摘要</span>}
+              </p>
+              <h1 id="verdict-title">{verdict}</h1>
+              <p className="verdict-detail">{verdictDetail}</p>
+              <p className="run-summary">
+                本輪分類 {totalMatched(active)} 封
+                <span aria-hidden="true"> · </span>
+                自動封存 {archived} 封
+                <span aria-hidden="true"> · </span>
+                每小時整點自動整理
+              </p>
             </div>
-            <div className="hero-stats">
-              <div><strong>{totalMatched(active)}</strong><span>規則分類</span></div>
-              <div><strong>{active.accounts.reduce((sum, item) => sum + item.archived, 0)}</strong><span>已封存</span></div>
-              <div><strong>{active.accounts.reduce((sum, item) => sum + item.aiSuggestions.length, 0)}</strong><span>AI 重點</span></div>
-            </div>
+            <OrganizeNowControl latestRunKey={latestRunKey} latestRunAt={active.createdAt} />
           </section>
 
-          <ActionRail />
+          <section className="triage-feed" aria-label="郵件重點">
+            {urgent.length ? (
+              <section className="priority-group urgent-group" aria-labelledby="urgent-title">
+                <header>
+                  <h2 id="urgent-title">現在需要處理</h2>
+                  <span>{urgent.length} 封</span>
+                </header>
+                <HighlightList items={urgent.slice(0, 12)} empty="" />
+              </section>
+            ) : (
+              <p className="safe-line"><span aria-hidden="true">✓</span>目前沒有緊急郵件</p>
+            )}
 
-          <section className="combined-overview" aria-labelledby="combined-title">
-            <div className="section-heading">
-              <div>
-                <span className="eyebrow">ALL MAILBOXES</span>
-                <h2 id="combined-title">四個信箱，一次看完</h2>
+            {important.length > 0 && (
+              <section className="priority-group important-group" aria-labelledby="important-title">
+                <header>
+                  <h2 id="important-title">今天值得確認</h2>
+                  <span>{important.length} 封</span>
+                </header>
+                <HighlightList items={important.slice(0, 12)} empty="" />
+              </section>
+            )}
+
+            <details className="normal-disclosure">
+              <summary>
+                <span>一般資訊</span>
+                <span className="summary-note">不需要立即處理</span>
+                <strong>{normal.length} 封</strong>
+                <span className="disclosure-chevron" aria-hidden="true">⌄</span>
+              </summary>
+              <div className="normal-content">
+                <HighlightList items={normal.slice(0, 16)} empty="這次沒有一般資訊。" />
               </div>
-              <p>緊急信優先；每封都標示來源信箱與分類。</p>
-            </div>
-            <div className="priority-columns">
-              <article className={`priority-panel urgent-panel${urgent.length ? "" : " is-empty"}`}>
-                <header>
-                  <div><span className="signal-dot" />需要先處理</div>
-                  <strong>{urgent.length}</strong>
-                </header>
-                <HighlightList items={urgent.slice(0, 12)} empty="目前沒有緊急郵件。" />
-              </article>
-              <article className="priority-panel general-panel">
-                <header>
-                  <div>重要與一般</div>
-                  <strong>{general.length}</strong>
-                </header>
-                <HighlightList items={general.slice(0, 16)} empty="這次沒有其他摘要。" />
-              </article>
-            </div>
+            </details>
           </section>
 
-          <section className="mailbox-section" aria-labelledby="mailbox-title">
-            <div className="section-heading mailbox-heading">
-              <div>
-                <span className="eyebrow">MAILBOX DETAILS</span>
-                <h2 id="mailbox-title">各信箱整理結果</h2>
-              </div>
-              <p>預設收合，需要時再展開查看分類與郵件。</p>
-            </div>
-            <div className="mailbox-list">
-              {active.accounts.map((account) => {
-                const matchedCount = Object.values(account.matched).reduce((sum, count) => sum + count, 0);
-                return (
-                  <details className="mailbox-disclosure" key={account.email}>
+          <section className="source-section" aria-label="來源信箱">
+            <details className="source-disclosure">
+              <summary>
+                <div>
+                  <strong>來源信箱</strong>
+                  <span>查看四個帳號的整理紀錄</span>
+                </div>
+                <span className="source-count">{active.accounts.length} 個</span>
+                <span className="disclosure-chevron" aria-hidden="true">⌄</span>
+              </summary>
+              <div className="source-list">
+                {active.accounts.map((account) => (
+                  <details className="source-account" key={account.email}>
                     <summary>
-                      <div className="account-letter" aria-hidden="true">{account.name}</div>
-                      <div className="mailbox-identity">
-                        <h3>{account.email}</h3>
-                        <p>Gmail {account.name}</p>
-                      </div>
-                      <div className="mailbox-metrics" aria-label={`${matchedCount} 封分類，${account.archived} 封封存，${account.aiSuggestions.length} 個重點`}>
-                        <span><strong>{matchedCount}</strong> 分類</span>
-                        <span><strong>{account.archived}</strong> 封存</span>
-                        <span><strong>{account.aiSuggestions.length}</strong> 重點</span>
-                      </div>
-                      <span className={account.aiError ? "status warning" : "status"}>
-                        {account.aiError ? "AI 略過" : "完成"}
+                      <span className="account-letter" aria-hidden="true">{account.name}</span>
+                      <span className="source-identity">
+                        <strong>{account.email}</strong>
+                        <small>Gmail {account.name}</small>
                       </span>
-                      <span className="mailbox-chevron" aria-hidden="true">⌄</span>
+                      <span className={account.aiError ? "source-activity warning" : "source-activity"}>
+                        {account.aiError ? "AI 略過 · " : ""}{accountActivity(account)}
+                      </span>
+                      <span className="disclosure-chevron" aria-hidden="true">⌄</span>
                     </summary>
 
-                    <div className="mailbox-detail">
+                    <div className="source-detail">
                       <div className="category-row">
                         {Object.entries(account.matched).filter(([, count]) => count > 0).map(([label, count]) => (
-                          <span key={label}>{label}<strong>{count}</strong></span>
+                          <span key={label}>{categoryLabel[label] ?? label}<strong>{count}</strong></span>
                         ))}
                         {Object.values(account.matched).every((count) => count === 0) && <span>沒有規則分類</span>}
                       </div>
@@ -244,7 +269,7 @@ export default async function Home() {
 
                       <div className="ai-section">
                         <h3>
-                          AI 緊急重點
+                          重點郵件
                           {account.aiLabelsApplied > 0 && <small>已自動貼標籤 {account.aiLabelsApplied} 封</small>}
                         </h3>
                         {account.aiSuggestions.length ? (
@@ -264,7 +289,7 @@ export default async function Home() {
                                       <span className={`priority priority-${priority}`}>
                                         {priorityLabel[priority]}
                                       </span>
-                                      <span className="category-badge">{item.category}</span>
+                                      <span className="category-badge">{categoryLabel[item.category] ?? item.category}</span>
                                     </div>
                                     <div>
                                       <a
@@ -287,14 +312,14 @@ export default async function Home() {
                       </div>
                     </div>
                   </details>
-                );
-              })}
-            </div>
+                ))}
+              </div>
+            </details>
           </section>
         </>
       )}
 
-      <footer>緊急信優先 · 高信心 AI 自動貼標籤 · 30 天後自動刪除 · 不保存郵件全文</footer>
+      <footer>摘要保留 30 天 · 不保存郵件全文 · 只推播緊急郵件</footer>
     </main>
   );
 }
