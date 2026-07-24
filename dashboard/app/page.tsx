@@ -78,6 +78,15 @@ function HighlightList({ items, empty }: { items: CombinedSuggestion[]; empty: s
   );
 }
 
+function ActionRail() {
+  return (
+    <section className="action-rail" aria-label="信箱工具">
+      <OrganizeNowControl />
+      <NotificationControl />
+    </section>
+  );
+}
+
 export default async function Home() {
   const user = await getChatGPTUser();
   const localPreview = process.env.NODE_ENV === "development";
@@ -141,15 +150,15 @@ export default async function Home() {
         </div>
       </header>
 
-      <NotificationControl />
-      <OrganizeNowControl />
-
       {!active ? (
-        <section className="empty-state">
-          <span className="eyebrow">READY</span>
-          <h1>儀表板已準備好。</h1>
-          <p>下一次 Railway 整理完成後，摘要會自動出現在這裡。</p>
-        </section>
+        <>
+          <section className="empty-state">
+            <span className="eyebrow">READY</span>
+            <h1>儀表板已準備好。</h1>
+            <p>下一次 Railway 整理完成後，摘要會自動出現在這裡。</p>
+          </section>
+          <ActionRail />
+        </>
       ) : (
         <>
           <section className="hero">
@@ -165,6 +174,8 @@ export default async function Home() {
             </div>
           </section>
 
+          <ActionRail />
+
           <section className="combined-overview" aria-labelledby="combined-title">
             <div className="section-heading">
               <div>
@@ -174,7 +185,7 @@ export default async function Home() {
               <p>緊急信優先；每封都標示來源信箱與分類。</p>
             </div>
             <div className="priority-columns">
-              <article className="priority-panel urgent-panel">
+              <article className={`priority-panel urgent-panel${urgent.length ? "" : " is-empty"}`}>
                 <header>
                   <div><span className="signal-dot" />需要先處理</div>
                   <strong>{urgent.length}</strong>
@@ -191,69 +202,94 @@ export default async function Home() {
             </div>
           </section>
 
-          <section className="account-grid">
-            {active.accounts.map((account) => (
-              <article className="account-card compact-account" key={account.email}>
-                <header>
-                  <div className="account-letter">{account.name}</div>
-                  <div><h2>{account.email}</h2><p>Gmail {account.name}</p></div>
-                  <span className={account.aiError ? "status warning" : "status"}>{account.aiError ? "AI 略過" : "完成"}</span>
-                </header>
+          <section className="mailbox-section" aria-labelledby="mailbox-title">
+            <div className="section-heading mailbox-heading">
+              <div>
+                <span className="eyebrow">MAILBOX DETAILS</span>
+                <h2 id="mailbox-title">各信箱整理結果</h2>
+              </div>
+              <p>預設收合，需要時再展開查看分類與郵件。</p>
+            </div>
+            <div className="mailbox-list">
+              {active.accounts.map((account) => {
+                const matchedCount = Object.values(account.matched).reduce((sum, count) => sum + count, 0);
+                return (
+                  <details className="mailbox-disclosure" key={account.email}>
+                    <summary>
+                      <div className="account-letter" aria-hidden="true">{account.name}</div>
+                      <div className="mailbox-identity">
+                        <h3>{account.email}</h3>
+                        <p>Gmail {account.name}</p>
+                      </div>
+                      <div className="mailbox-metrics" aria-label={`${matchedCount} 封分類，${account.archived} 封封存，${account.aiSuggestions.length} 個重點`}>
+                        <span><strong>{matchedCount}</strong> 分類</span>
+                        <span><strong>{account.archived}</strong> 封存</span>
+                        <span><strong>{account.aiSuggestions.length}</strong> 重點</span>
+                      </div>
+                      <span className={account.aiError ? "status warning" : "status"}>
+                        {account.aiError ? "AI 略過" : "完成"}
+                      </span>
+                      <span className="mailbox-chevron" aria-hidden="true">⌄</span>
+                    </summary>
 
-                <div className="category-row">
-                  {Object.entries(account.matched).filter(([, count]) => count > 0).map(([label, count]) => (
-                    <span key={label}>{label}<strong>{count}</strong></span>
-                  ))}
-                  {Object.values(account.matched).every((count) => count === 0) && <span>沒有規則分類</span>}
-                </div>
+                    <div className="mailbox-detail">
+                      <div className="category-row">
+                        {Object.entries(account.matched).filter(([, count]) => count > 0).map(([label, count]) => (
+                          <span key={label}>{label}<strong>{count}</strong></span>
+                        ))}
+                        {Object.values(account.matched).every((count) => count === 0) && <span>沒有規則分類</span>}
+                      </div>
 
-                <div className="archive-line"><span>本次封存</span><strong>{account.archived} 封</strong></div>
+                      <div className="archive-line"><span>本次封存</span><strong>{account.archived} 封</strong></div>
 
-                <div className="ai-section">
-                  <h3>
-                    AI 緊急重點
-                    {account.aiLabelsApplied > 0 && <small>已自動貼標籤 {account.aiLabelsApplied} 封</small>}
-                  </h3>
-                  {account.aiSuggestions.length ? (
-                    <ol>
-                      {[...account.aiSuggestions]
-                        .sort(
-                          (left, right) =>
-                            priorityOrder[normalizedPriority(left.priority)] -
-                            priorityOrder[normalizedPriority(right.priority)],
-                        )
-                        .slice(0, 5)
-                        .map((item, index) => {
-                        const priority = normalizedPriority(item.priority);
-                        return (
-                        <li key={`${item.threadId}-${index}`}>
-                          <div className="badge-stack">
-                            <span className={`priority priority-${priority}`}>
-                              {priorityLabel[priority]}
-                            </span>
-                            <span className="category-badge">{item.category}</span>
-                          </div>
-                          <div>
-                            <a
-                              className="mail-link"
-                              href={gmailThreadUrl(account.email, item.threadId)}
-                              target="_blank"
-                              rel="noreferrer"
-                            >
-                              {item.subject || "開啟這封郵件"} ↗
-                            </a>
-                            <p>{item.summary}</p>
-                          </div>
-                        </li>
-                        );
-                      })}
-                    </ol>
-                  ) : (
-                    <p className="quiet">{account.aiError ? "AI 暫時無法使用，規則整理仍已完成。" : "這次沒有額外重點。"}</p>
-                  )}
-                </div>
-              </article>
-            ))}
+                      <div className="ai-section">
+                        <h3>
+                          AI 緊急重點
+                          {account.aiLabelsApplied > 0 && <small>已自動貼標籤 {account.aiLabelsApplied} 封</small>}
+                        </h3>
+                        {account.aiSuggestions.length ? (
+                          <ol>
+                            {[...account.aiSuggestions]
+                              .sort(
+                                (left, right) =>
+                                  priorityOrder[normalizedPriority(left.priority)] -
+                                  priorityOrder[normalizedPriority(right.priority)],
+                              )
+                              .slice(0, 5)
+                              .map((item, index) => {
+                                const priority = normalizedPriority(item.priority);
+                                return (
+                                  <li key={`${item.threadId}-${index}`}>
+                                    <div className="badge-stack">
+                                      <span className={`priority priority-${priority}`}>
+                                        {priorityLabel[priority]}
+                                      </span>
+                                      <span className="category-badge">{item.category}</span>
+                                    </div>
+                                    <div>
+                                      <a
+                                        className="mail-link"
+                                        href={gmailThreadUrl(account.email, item.threadId)}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                      >
+                                        {item.subject || "開啟這封郵件"} ↗
+                                      </a>
+                                      <p>{item.summary}</p>
+                                    </div>
+                                  </li>
+                                );
+                              })}
+                          </ol>
+                        ) : (
+                          <p className="quiet">{account.aiError ? "AI 暫時無法使用，規則整理仍已完成。" : "這次沒有額外重點。"}</p>
+                        )}
+                      </div>
+                    </div>
+                  </details>
+                );
+              })}
+            </div>
           </section>
         </>
       )}

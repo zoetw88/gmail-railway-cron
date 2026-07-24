@@ -14,8 +14,8 @@ test("build emits the dashboard worker and removes starter preview content", asy
   assert.doesNotMatch(packageJson, /react-loading-skeleton/);
 });
 
-test("source keeps data minimization and server-side authorization explicit", async () => {
-  const [page, route, publisher, push, subscriptions, viewerAccess, organizeNow, manifest, serviceWorker] = await Promise.all([
+test("source keeps data minimization, accessible controls, and server-side authorization explicit", async () => {
+  const [page, route, publisher, push, subscriptions, viewerAccess, organizeNow, notification, styles, manifest, serviceWorker] = await Promise.all([
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/api/digests/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../../src/gmail_cron/dashboard.py", import.meta.url), "utf8"),
@@ -23,6 +23,8 @@ test("source keeps data minimization and server-side authorization explicit", as
     readFile(new URL("../app/api/push/subscriptions/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/viewer-access.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/organize-now/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/notification-control.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
     readFile(new URL("../public/manifest.webmanifest", import.meta.url), "utf8"),
     readFile(new URL("../public/sw.js", import.meta.url), "utf8"),
   ]);
@@ -39,6 +41,10 @@ test("source keeps data minimization and server-side authorization explicit", as
   assert.match(page, /combined-overview/);
   assert.match(page, /priority-columns/);
   assert.match(page, /account-chip/);
+  assert.match(page, /className="action-rail"/);
+  assert.match(page, /<details className="mailbox-disclosure"/);
+  assert.match(page, /<summary>/);
+  assert.doesNotMatch(page, /<details[^>]*\sopen/);
   assert.match(page, /urgent\.slice\(0, 12\)/);
   assert.match(page, /general\.slice\(0, 16\)/);
   assert.doesNotMatch(page, /className="timeline"/);
@@ -62,4 +68,10 @@ test("source keeps data minimization and server-side authorization explicit", as
   assert.match(organizeNow, /MANUAL_RUN_URL/);
   assert.match(organizeNow, /datetime\('now', '-5 minutes'\)/);
   assert.doesNotMatch(organizeNow, /request\.json/);
+  assert.match(page, /aria-label="信箱工具"/);
+  assert.match(notification, /aria-busy=/);
+  assert.match(notification, /role="status"/);
+  assert.match(styles, /summary:focus-visible/);
+  assert.match(styles, /prefers-reduced-motion/);
+  assert.doesNotMatch(styles, /\.action-rail\s*\{[^}]*position:\s*(?:fixed|sticky)/s);
 });

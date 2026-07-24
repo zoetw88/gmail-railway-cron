@@ -6,7 +6,7 @@ type RunState = "idle" | "starting" | "started" | "cooldown" | "error";
 
 export function OrganizeNowControl() {
   const [state, setState] = useState<RunState>("idle");
-  const [message, setMessage] = useState("同時整理四個 Gmail，完成後會更新這一頁。");
+  const [message, setMessage] = useState("四個 Gmail 一次整理，完成後自動更新摘要。");
 
   async function start() {
     setState("starting");
@@ -32,21 +32,47 @@ export function OrganizeNowControl() {
     }
   }
 
+  const buttonCopy =
+    state === "starting"
+      ? "整理啟動中"
+      : state === "started"
+        ? "已開始整理"
+        : state === "cooldown"
+          ? "稍後可再整理"
+          : state === "error"
+            ? "再試一次"
+            : "立即整理全部信箱";
+
   return (
-    <section className={`organize-now organize-${state}`} aria-live="polite">
-      <div>
-        <span className="eyebrow">ON DEMAND</span>
-        <strong>現在整理全部信箱</strong>
-        <p>{message}</p>
+    <section
+      className={`action-card action-card-primary organize-${state}`}
+      aria-busy={state === "starting"}
+    >
+      <div className="action-copy">
+        <div className="action-heading">
+          <span className="action-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path d="M4.75 8.5a7.5 7.5 0 0 1 12.8-2.8L19.8 8M19.25 15.5a7.5 7.5 0 0 1-12.8 2.8L4.2 16" />
+              <path d="M19.8 4.5V8h-3.5M4.2 19.5V16h3.5" />
+            </svg>
+          </span>
+          <div>
+            <span className="action-kicker">全部信箱</span>
+            <strong>現在整理最新郵件</strong>
+          </div>
+        </div>
+        <p className="action-status" role="status" aria-live="polite">{message}</p>
       </div>
       <button
+        className="action-button action-button-primary"
         type="button"
         onClick={start}
         disabled={state === "starting" || state === "started" || state === "cooldown"}
       >
-        {state === "starting" ? "啟動中…" : state === "started" ? "已啟動" : "立即整理"}
+        {state === "starting" && <span className="button-spinner" aria-hidden="true" />}
+        {state === "started" && <span aria-hidden="true">✓</span>}
+        {buttonCopy}
       </button>
     </section>
   );
 }
-

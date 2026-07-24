@@ -20,16 +20,24 @@ export function NotificationControl() {
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) {
-      setState("unsupported");
-      return;
-    }
-    currentSubscription()
-      .then((subscription) => {
-        if (Notification.permission === "denied") setState("blocked");
-        else setState(subscription ? "on" : "off");
+    let mounted = true;
+    const nextState = !("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)
+      ? Promise.resolve<NotificationState>("unsupported")
+      : currentSubscription().then((subscription): NotificationState => {
+          if (Notification.permission === "denied") return "blocked";
+          return subscription ? "on" : "off";
+        });
+
+    nextState
+      .then((value) => {
+        if (mounted) setState(value);
       })
-      .catch(() => setState("error"));
+      .catch(() => {
+        if (mounted) setState("error");
+      });
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   async function enable() {
@@ -93,33 +101,57 @@ export function NotificationControl() {
         ? "通知已被瀏覽器封鎖"
         : state === "unsupported"
           ? "此瀏覽器不支援推播"
-          : state === "working" || state === "checking"
-            ? "正在確認通知狀態…"
-            : "開啟緊急通知";
+          : state === "working"
+            ? "正在更新通知"
+            : state === "checking"
+              ? "正在確認通知狀態"
+              : state === "error"
+                ? "通知暫時無法使用"
+                : "緊急通知";
+
+  const helper =
+    state === "blocked"
+      ? "請到瀏覽器網站設定允許通知。"
+      : state === "unsupported"
+        ? "iPhone 請先將此頁加入主畫面，再從主畫面開啟。"
+        : message || "只在發現緊急郵件時提醒；一般信不打擾你。";
 
   return (
-    <section className={`notification-card notification-${state}`} aria-live="polite">
-      <div className="notification-icon" aria-hidden="true">!</div>
-      <div>
-        <strong>{copy}</strong>
-        <p>
-          {state === "blocked"
-            ? "請到瀏覽器網站設定允許通知。"
-            : state === "unsupported"
-              ? "iPhone 請先將此頁加入主畫面，再從主畫面開啟。"
-              : "只在發現緊急郵件時提醒；一般信不打擾你。"}
-        </p>
-        {message && <small>{message}</small>}
+    <section
+      className={`action-card action-card-secondary notification-${state}`}
+      aria-busy={state === "checking" || state === "working"}
+    >
+      <div className="action-copy">
+        <div className="action-heading">
+          <span className="action-icon notification-bell" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path d="M18 9.75a6 6 0 0 0-12 0c0 7-2.5 7-2.5 7h17s-2.5 0-2.5-7Z" />
+              <path d="M9.75 20h4.5" />
+            </svg>
+            {state === "on" && <span className="notification-dot" />}
+          </span>
+          <div>
+            <span className="action-kicker">只提醒緊急信</span>
+            <strong>{copy}</strong>
+          </div>
+        </div>
+        <p className="action-status" role="status" aria-live="polite">{helper}</p>
       </div>
       {state === "on" ? (
-        <button type="button" onClick={disable}>關閉</button>
+        <button className="action-button action-button-secondary" type="button" onClick={disable}>
+          關閉通知
+        </button>
       ) : (
         <button
+          className="action-button action-button-secondary"
           type="button"
           onClick={enable}
           disabled={state === "checking" || state === "working" || state === "unsupported" || state === "blocked"}
         >
-          開啟
+          {(state === "checking" || state === "working") && (
+            <span className="button-spinner" aria-hidden="true" />
+          )}
+          {state === "checking" || state === "working" ? "請稍候" : state === "error" ? "再試一次" : "開啟通知"}
         </button>
       )}
     </section>
